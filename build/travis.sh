@@ -9,6 +9,6 @@ ssh-keyscan -H github.com >> ~/.ssh/known_hosts
 if ! git diff --exit-code README.md; then
   git checkout ${TRAVIS_BRANCH}
   git add README.md
-  git commit --message "Travis build ${TRAVIS_BUILD_NUMBER} of README.md: <${TRAVIS_BUILD_WEB_URL}>"
+  git commit --message "Travis build ${TRAVIS_BUILD_NUMBER} of README.md: <${TRAVIS_BUILD_WEB_URL}> [ci skip]"
   git push -v
 fi
