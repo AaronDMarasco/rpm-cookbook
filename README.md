@@ -38,8 +38,6 @@ Feel free to create a new chapter and submit a PR!
 
 #### Recipe
 
-This is a test to see if Travis will upload a new README.md
-
 ## Jenkins Job Number in Release
 ### Reasoning
 
