@@ -1,0 +1,20 @@
+#comment This file is the "source" that is generated using markdown-include
+#comment "npm install markdown-include" then "./build.js" to generate.
+
+# rpm-cookbook !heading
+Cookbook of RPM techniques
+
+I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing.
+
+Feel free to create a new chapter and submit a PR!
+
+#include "../pre-existing_file_tree/README.md"
+#include "../git/branch_or_tag/README.md"
+#include "../git/monotonic/README.md"
+#include "../jenkins/jobnumber/README.md"
+#include "../multiple_versions/latest_symlink/README.md"
+#include "../fake_buildhost/README.md"
+
+  [1]: https://stackoverflow.com/search?q=user:836748+[rpm]
+  [2]: https://stackoverflow.com/search?q=user:836748+[rpmbuild]
+  [3]: https://stackoverflow.com/search?q=user:836748+[rpm-spec]
