@@ -19,12 +19,38 @@ Cookbook of RPM techniques
 
 I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing.
 
+Each "chapter" is a separate directory, and any specfiles or `Makefile`s are transcluded, so they are available as source files in the git repo. No need to copy and paste from your browser!
+
 Feel free to create a new chapter and submit a PR!
 
 ## Importing a Pre-Existing File Tree
 ### Reasoning
+This is probably one of the most common questions on Stack Overflow. It might be because you don't know enough about RPMs to "do it right" or you just want to "get it done."
+
+I'm a little reluctant to include this, because doing it the "right way" isn't all that hard.
+
+**This is not recommended** but sometimes inevitable:
+ * The build system is too complicated (seldom)
+ * You're packaging something already installed
+   * that you have no control over
+   * was installed by a GUI installer and you want to repackage
+   * you don't have source code for
 
 ### Recipe
+This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an exapmple [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
+
+[`Makefile`](pre-existing_file_tree/Makefile):
+```Makefile
+
+```
+
+[specfile](pre-existing_file_tree/project.spec)
+```rpm-spec
+#include "../pre-existing_file_tree/project.spec.md"
+```
+
+### How It Works
+The `Makefile` takes `INPUT` as a variable (defaults to `/opt/project`) and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
 
 
 ## Git Problems
@@ -60,6 +86,8 @@ Newer versions of `rpmbuild` support defining `_buildhost`; I have not tested th
 This recipe requires you wrap your `rpmbuild` command with a script or `Makefile`. Using the `Makefile` below, you would have `make` call `$(SPOOF_HOSTNAME) rpmbuild ...`.
 
 Edit the `Makefile` yourself where it says "`.myprojectname.proj`" - you can optionally _not_ have it use the `buildhost_<arch>` prefix as well.
+
+Other usage notes are at the top of the `Makefile`.
 
 [`Makefile`](fake_buildhost/Makefile):
 ```Makefile
@@ -130,7 +158,7 @@ export libmyhostname_body
 ```
 
 ### How It Works
-It sets `LD_PRELOAD` to intercept all 32- or 64-bit calls to `gethostname` and replace them with the text you provide.
+It sets [`LD_PRELOAD`](view-source:https://man7.org/linux/man-pages/man8/ld.so.8.html) to intercept all 32- or 64-bit calls to [`gethostname()`](https://man7.org/linux/man-pages/man2/gethostname.2.html) and replace them with the text you provide.
 
 
   [1]: https://stackoverflow.com/search?q=user:836748+[rpm]
