@@ -81,6 +81,8 @@ As noted [here](https://stackoverflow.com/a/10694815/836748):
 %global your_var %(shell your commands)
 ```
 
+----
+
 ## Importing a Pre-Existing File Tree
 ### Reasoning
 This is probably one of the most common questions on Stack Overflow. It might be because you don't know enough about RPMs to "do it right" or you just want to "get it done."
@@ -149,7 +151,7 @@ filelist.txt: $(REAL_INPUT)
 
 ```
 
-[specfile](pre-existing_file_tree/project.spec)
+[specfile](pre-existing_file_tree/project.spec):
 ```rpm-spec
 Name: %{project_}
 Version: %{version_}
@@ -157,7 +159,7 @@ Release: %{release_}
 License: MIT
 Summary: My Poorly Packaged Project
 Source0: %{name}.tar
-# Uncomment this line if you have executables with debug info in the source tree:
+# Remove this line if you have executables with debug info in the source tree:
 %global debug_package %{nil}
 BuildRequires: sed tar
 
@@ -187,7 +189,20 @@ tar tf %{SOURCE0} | sed -e 's|^%{name}-%{version}|%{outdir}|' > parsed_filelist.
 ```
 
 ### How It Works
-The `Makefile` takes `INPUT` as a variable (defaults to `/opt/project`) and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
+The `Makefile` takes various variables and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
+
+|  Variable  |         Default         |             Use Case             |
+|:----------:|:-----------------------:|:--------------------------------:|
+| `INPUT`    | `/opt/project`          | Source Tree to Copy              |
+| `OUTPUT`   | `/opt/project`          | Destination on Target Machine    |
+| `PROJECT`  | myproject               | Base Name of the RPM             |
+| `VERSION`  | 0.1                     | Version of the RPM               |
+| `RELEASE`  | 1                       | Release/ Build of the RPM        |
+| `TARBALL`  | `{PROJECT}.tar`         | Temporary tarball used to build  |
+| `RPM_TEMP` | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM |
+
+
+----
 
 
 ## Git Problems
@@ -196,15 +211,21 @@ The `Makefile` takes `INPUT` as a variable (defaults to `/opt/project`) and gene
 
 #### Recipe
 
+----
+
 ### Monotonic Release Numbers
 #### Reasoning
 
 #### Recipe
 
+----
+
 ## Jenkins Job Number in Release
 ### Reasoning
 
 ### Recipe
+
+----
 
 
 ## Having Multiple Versions
@@ -212,6 +233,8 @@ The `Makefile` takes `INPUT` as a variable (defaults to `/opt/project`) and gene
 #### Reasoning
 
 #### Recipe
+
+----
 
 ## Spoofing RPM Host Name
 ### Reasoning
