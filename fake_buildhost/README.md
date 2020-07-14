@@ -9,10 +9,12 @@ This recipe requires you wrap your `rpmbuild` command with a script or `Makefile
 
 Edit the `Makefile` yourself where it says "`.myprojectname.proj`" - you can optionally _not_ have it use the `buildhost_<arch>` prefix as well.
 
+Other usage notes are at the top of the `Makefile`.
+
 [`Makefile`](fake_buildhost/Makefile):
 ```Makefile
 #include "../fake_buildhost/Makefile.md"
 ```
 
 ### How It Works
-It sets `LD_PRELOAD` to intercept all 32- or 64-bit calls to `gethostname` and replace them with the text you provide.
+It sets [`LD_PRELOAD`](view-source:https://man7.org/linux/man-pages/man8/ld.so.8.html) to intercept all 32- or 64-bit calls to [`gethostname()`](https://man7.org/linux/man-pages/man2/gethostname.2.html) and replace them with the text you provide.

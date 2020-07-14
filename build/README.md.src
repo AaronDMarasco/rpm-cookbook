@@ -6,6 +6,8 @@ Cookbook of RPM techniques
 
 I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing.
 
+Each "chapter" is a separate directory, and any specfiles or `Makefile`s are transcluded, so they are available as source files in the git repo. No need to copy and paste from your browser!
+
 Feel free to create a new chapter and submit a PR!
 
 #include "../pre-existing_file_tree/README.md"
