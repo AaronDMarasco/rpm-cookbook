@@ -23,11 +23,23 @@ While **not recommended**, because debug packages are very useful, this is shown
 ----
 
 #include "../quick_tips/README.md"
+----
+
 #include "../pre-existing_file_tree/README.md"
+----
+
 #include "../git/branch_or_tag/README.md"
+----
+
 #include "../git/monotonic/README.md"
+----
+
 #include "../jenkins/jobnumber/README.md"
+----
+
 #include "../multiple_versions/latest_symlink/README.md"
+----
+
 #include "../fake_buildhost/README.md"
 
   [1]: https://stackoverflow.com/search?q=user:836748+[rpm]

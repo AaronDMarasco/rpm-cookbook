@@ -4,7 +4,7 @@ Release: %{release_}
 License: MIT
 Summary: My Poorly Packaged Project
 Source0: %{name}.tar
-# Uncomment this line if you have executables with debug info in the source tree:
+# Remove this line if you have executables with debug info in the source tree:
 %global debug_package %{nil}
 BuildRequires: sed tar
 
