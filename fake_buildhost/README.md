@@ -9,6 +9,7 @@ This recipe requires you wrap your `rpmbuild` command with a script or `Makefile
 
 Edit the `Makefile` yourself where it says "`.myprojectname.proj`" - you can optionally _not_ have it use the `buildhost_<arch>` prefix as well.
 
+[`Makefile`](fake_buildhost/Makefile):
 ```Makefile
 #include "../fake_buildhost/Makefile.md"
 ```
