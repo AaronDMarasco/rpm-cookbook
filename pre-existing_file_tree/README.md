@@ -12,7 +12,7 @@ I'm a little reluctant to include this, because doing it the "right way" isn't a
    * you don't have source code for
 
 ### Recipe
-This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an exapmple [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
+This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an example [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
 
 [`Makefile`](pre-existing_file_tree/Makefile):
 ```Makefile
@@ -21,7 +21,7 @@ This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a
 
 [specfile](pre-existing_file_tree/project.spec)
 ```rpm-spec
-#include "../pre-existing_file_tree/project.spec.md"
+#include "../pre-existing_file_tree/project-spec.md"
 ```
 
 ### How It Works

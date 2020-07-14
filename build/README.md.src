@@ -4,12 +4,25 @@
 # rpm-cookbook !heading
 Cookbook of RPM techniques
 
-I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing.
+I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I see. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines).
 
 Each "chapter" is a separate directory, and any specfiles or `Makefile`s are transcluded, so they are available as source files in the git repo. No need to copy and paste from your browser!
 
 Feel free to create a new chapter and submit a PR!
 
+## How to... !heading
+### ... define Version, Release, etc. in another file, environment variable, etc. !heading
+This is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+### ... call `rpmbuild` from a `Makefile` !heading
+This is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+### ... disable debug packaging !heading
+While **not recommended**, because debug packages are very useful, this is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+----
+
+#include "../quick_tips/README.md"
 #include "../pre-existing_file_tree/README.md"
 #include "../git/branch_or_tag/README.md"
 #include "../git/monotonic/README.md"
