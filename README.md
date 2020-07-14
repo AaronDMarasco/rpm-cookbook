@@ -1,6 +1,16 @@
 Table of Contents
 
 * [rpm-cookbook](#rpm-cookbook)
+  * [How to...](#how-to)
+    * [... define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
+    * [... call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
+    * [... disable debug packaging](#disable-debug-packaging)
+  * [Quick Tips](#quick-tips)
+    * [Don't Put Single % In Comments](#don't-put-single-%-in-comments)
+    * [Extract All Files](#extract-all-files)
+    * [Extract a Single File](#extract-a-single-file)
+    * [Change (or No) Compression](#change-(or-no)-compression)
+    * [Set Output of a Random Shell Command Into Variable](#set-output-of-a-random-shell-command-into-variable)
   * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
   * [Git Problems](#git-problems)
     * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
@@ -17,11 +27,59 @@ Table of Contents
 # rpm-cookbook
 Cookbook of RPM techniques
 
-I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing.
+I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I see. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines).
 
 Each "chapter" is a separate directory, and any specfiles or `Makefile`s are transcluded, so they are available as source files in the git repo. No need to copy and paste from your browser!
 
 Feel free to create a new chapter and submit a PR!
+
+## How to...
+### ... define Version, Release, etc. in another file, environment variable, etc.
+This is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+### ... call `rpmbuild` from a `Makefile`
+This is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+### ... disable debug packaging
+While **not recommended**, because debug packages are very useful, this is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+----
+
+## Quick Tips
+In reviewing some of the most highly voted answers on Stack Overflow, I decided to collate a few:
+
+### Don't Put Single % In Comments
+This happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%` or a multi-line macro will only have the first line commented out!
+
+### Extract All Files
+Use `rpm2cpio` with `cpio`:
+```bash
+$ rpm2cpio package-version.rpm | cpio -div
+```
+
+### Extract a Single File
+As noted [here](https://stackoverflow.com/a/16605713/836748), use `rpm2cpio` with `cpio --to-stdout`:
+```bash
+$ rpm2cpio package-3.8.3.rpm | cpio -iv --to-stdout ./usr/share/doc/package-3.8.3/README > /tmp/README
+./usr/share/doc/package-3.8.3/README
+2173 blocks
+```
+
+### Change (or No) Compression
+As noted [here](https://stackoverflow.com/a/10255406/836748):
+```rpm-spec
+%define _source_payload w0.gzdio
+%define _binary_payload w0.gzdio
+```
+These will send `-0` to `gzip` to effectively not compress. The `0` can be 0-9 to change the level. The `gz` can be changed:
+ * `bz` for bzip2
+ * `xz` for XZ/LZMA (on some versions of RPM)
+
+### Set Output of a Random Shell Command Into Variable
+As noted [here](https://stackoverflow.com/a/10694815/836748):
+```rpm-spec
+%global your_var %(shell your commands)
+```
 
 ## Importing a Pre-Existing File Tree
 ### Reasoning
@@ -37,16 +95,95 @@ I'm a little reluctant to include this, because doing it the "right way" isn't a
    * you don't have source code for
 
 ### Recipe
-This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an exapmple [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
+This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an example [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
 
 [`Makefile`](pre-existing_file_tree/Makefile):
 ```Makefile
+# These can be overriden on the command line
+PROJECT?=myproject
+VERSION?=0.1
+RELEASE?=1
+
+INPUT?=/opt/project
+OUTPUT?=/opt/project
+
+# End of configuration
+# Make's realpath won't expand ~
+REAL_INPUT=$(shell realpath -e $(INPUT))
+
+TARBALL?=$(PROJECT).tar
+
+RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
+
+ifeq ($(REAL_INPUT),)
+  $(error Error parsing INPUT=$(INPUT))
+endif
+
+# Even real files are declared "phony" since dependencies otherwise broken
+default: rpm
+.PHONY: clean rpm $(TARBALL) filelist.txt
+.SILENT: clean rpm $(TARBALL) filelist.txt
+
+clean:
+	rm -rf $(RPM_TEMP) $(TARBALL) $(PROJECT)*.rpm filelist.txt
+
+rpm: $(TARBALL) filelist.txt
+	mkdir -p $(RPM_TEMP)/SOURCES
+	cp --target-directory=$(RPM_TEMP)/SOURCES/ $^
+	rpmbuild -ba \
+		--define="_topdir $(RPM_TEMP)" \
+		--define "outdir $(OUTPUT)" \
+		--define "project_ $(PROJECT)" \
+		--define "version_ $(VERSION)" \
+		--define "release_ $(RELEASE)" \
+		project.spec
+	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
+
+# The transform will replace the absolute path with a relative one with a new top-level of "proj-ver", which is what RPM prefers
+$(TARBALL): filelist.txt
+	echo "Building tarball of $(shell cat $< | wc -l) files"
+	tar --files-from=$< --owner=0 --group=0 --absolute-names --transform 's|^$(REAL_INPUT)|$(PROJECT)-$(VERSION)|' -cf $@
+
+filelist.txt: $(REAL_INPUT)
+	find $(REAL_INPUT) -type f -not -path '*/\.git/*' > $@
 
 ```
 
 [specfile](pre-existing_file_tree/project.spec)
 ```rpm-spec
-#include "../pre-existing_file_tree/project.spec.md"
+Name: %{project_}
+Version: %{version_}
+Release: %{release_}
+License: MIT
+Summary: My Poorly Packaged Project
+Source0: %{name}.tar
+# Uncomment this line if you have executables with debug info in the source tree:
+%global debug_package %{nil}
+BuildRequires: sed tar
+
+%description
+This RPM is effectively a fancy tarball.
+
+%prep
+set -o pipefail
+# Default setup - extract the tarball
+%setup -q
+# Generate the file list with absolute target pathnames)
+tar tf %{SOURCE0} | sed -e 's|^%{name}-%{version}|%{outdir}|' > parsed_filelist.txt
+
+%build
+# Empty; rpmlint recommendeds it is present anyway
+
+%install
+%{__mkdir_p} %{buildroot}/%{outdir}/
+%{__cp} --target-directory=%{buildroot}/%{outdir}/ -Rv .
+%{__rm} %{buildroot}/%{outdir}/parsed_filelist.txt
+
+%clean
+%{__rm} -rf --preserve-root %{buildroot}
+
+%files -f parsed_filelist.txt
+
 ```
 
 ### How It Works
