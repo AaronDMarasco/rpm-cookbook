@@ -9,10 +9,10 @@ Table of Contents
     * [Change (or No) Compression](#change-(or-no)-compression)
     * [Set Output of a Shell Command Into Variable](#set-output-of-a-shell-command-into-variable)
   * [How to...](#how-to)
-    * [define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
-    * [call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
-    * [disable debug packaging](#disable-debug-packaging)
-    * [include Jenkins (or Any CI) Job Number in Release](#include-jenkins-(or-any-ci)-job-number-in-release)
+    * [Define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
+    * [Call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
+    * [Disable debug packaging](#disable-debug-packaging)
+    * [Include Jenkins (or Any CI) Job Number in Release](#include-jenkins-(or-any-ci)-job-number-in-release)
   * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
   * [Git Problems and Tricks](#git-problems-and-tricks)
     * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
@@ -77,19 +77,23 @@ As noted [here](https://stackoverflow.com/a/10694815/836748):
 ----
 
 ## How to...
-### define Version, Release, etc. in another file, environment variable, etc.
+### Define Version, Release, etc. in another file, environment variable, etc.
 This is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
  * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
-### call `rpmbuild` from a `Makefile`
+
+### Call `rpmbuild` from a `Makefile`
 This is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
  * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
-### disable debug packaging
+
+### Disable debug packaging
 While **not recommended**, because debug packages are very useful, this is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
  * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
-### include Jenkins (or Any CI) Job Number in Release
+
+### Include Jenkins (or Any CI) Job Number in Release
+
 This is shown in the `git` chapter as [Jenkins Build Number in Release](#jenkins-build-number-in-release)
 ----
 
