@@ -12,13 +12,13 @@ Table of Contents
     * [define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
     * [call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
     * [disable debug packaging](#disable-debug-packaging)
-    * [include Jenkins Job Number in Release](#include-jenkins-job-number-in-release)
+    * [include Jenkins (or Any CI) Job Number in Release](#include-jenkins-(or-any-ci)-job-number-in-release)
   * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
   * [Git Problems and Tricks](#git-problems-and-tricks)
     * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
     * [Monotonic Release Numbers](#monotonic-release-numbers)
     * [Embedding Source Hash in Description](#embedding-source-hash-in-description)
-    * [Jenkins (or Any CI) Build Number in Release](#jenkins-(or-any-ci)-build-number-in-release)
+    * [Jenkins Build Number in Release](#jenkins-build-number-in-release)
   * [Having Multiple Versions](#having-multiple-versions)
     * [Symlinks to Latest](#symlinks-to-latest)
   * [Spoofing RPM Host Name](#spoofing-rpm-host-name)
@@ -89,8 +89,8 @@ This is shown in:
 While **not recommended**, because debug packages are very useful, this is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
  * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
-### include Jenkins Job Number in Release
-This is shown in the `git` chapter as [Jenkins (or Any CI) Build Number in Release](#jenkins-(or-any-ci)-build-number-in-release)
+### include Jenkins (or Any CI) Job Number in Release
+This is shown in the `git` chapter as [Jenkins Build Number in Release](#jenkins-build-number-in-release)
 ----
 
 ## Importing a Pre-Existing File Tree
@@ -222,7 +222,7 @@ and
 and
 ### Embedding Source Hash in Description
 and
-### Jenkins (or Any CI) Build Number in Release
+### Jenkins Build Number in Release
 #### Overview
 This "chapter" is very much intertwined, so you'll have to rip out the parts you want.
 
