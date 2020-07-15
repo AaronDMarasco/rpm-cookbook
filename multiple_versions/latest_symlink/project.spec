@@ -42,7 +42,6 @@ But we share the symlink %{target_link} across two or more packages.
 %install
 %{__mkdir_p} %{buildroot}/%{outdir}/
 touch %{buildroot}/%{outdir}/myfile.txt
-## touch %{buildroot}/%{target_link}
 
 %post
 %if "%{name}" != "%{base_project}"
@@ -63,15 +62,18 @@ ln -s %{outdir} %{target_link}
 %endif
 
 %postun
-%if "%{name}" == "%{base_project}"
 [ $1 = 0 ] || exit 0
-# We are last copy of main package; delete symlink
-rm -f %{target_link}
-%endif
-# All packages warn about missing symlink
+# See if symlink points to us explicitly
+if [ x"%{outdir}" == x"`readlink %{target_link}`" ]; then
+  rm -f %{target_link}
+fi
+
+# All packages warn about missing symlink if there are potential candidates
 if [ ! -e %{target_link} ]; then
-  >&2 echo "%{name}: %{target_link} is removed and may need to be manually updated"
-  >&2 find %{orgdir} -maxdepth 1 -type d -path '%{orgdir}/%{base_project}*' || :
+  CANDIDATES=$(cd %{orgdir} && find . -maxdepth 1 -type d -name '%{base_project}*')
+  if [ -n "${CANDIDATES}" ]; then
+    >&2 echo "%{name}: %{target_link} is removed and may need to be manually updated; candidate(s): ${CANDIDATES}"
+  fi
 fi
 
 %clean
@@ -80,5 +82,4 @@ fi
 %files
 %dir %{outdir}
 %{outdir}/myfile.txt
-# This file may or may not exist, and shouldn't be considered ours for verification
-## %%ghost %{target_link}
+
