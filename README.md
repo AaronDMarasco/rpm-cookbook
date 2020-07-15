@@ -12,14 +12,13 @@ Table of Contents
     * [... define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
     * [... call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
     * [... disable debug packaging](#disable-debug-packaging)
-    * [... put the `git` hash of your source in the RPM description field](#put-the--git--hash-of-your-source-in-the-rpm-description-field)
+    * [... include Jenkins Job Number in Release](#include-jenkins-job-number-in-release)
   * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
   * [Git Problems and Tricks](#git-problems-and-tricks)
     * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
     * [Monotonic Release Numbers](#monotonic-release-numbers)
     * [Embedding Source Hash in Description](#embedding-source-hash-in-description)
     * [Jenkins (or Any CI) Build Number in Release](#jenkins-(or-any-ci)-build-number-in-release)
-  * [Jenkins Job Number in Release](#jenkins-job-number-in-release)
   * [Having Multiple Versions](#having-multiple-versions)
     * [Symlinks to Latest](#symlinks-to-latest)
   * [Spoofing RPM Host Name](#spoofing-rpm-host-name)
@@ -81,15 +80,17 @@ As noted [here](https://stackoverflow.com/a/10694815/836748):
 ### ... define Version, Release, etc. in another file, environment variable, etc.
 This is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+ * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
 ### ... call `rpmbuild` from a `Makefile`
 This is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+ * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
 ### ... disable debug packaging
 While **not recommended**, because debug packages are very useful, this is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
-### ... put the `git` hash of your source in the RPM description field
-This is shown in:
  * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
+### ... include Jenkins Job Number in Release
+This is shown in the `git` chapter as [Jenkins (or Any CI) Build Number in Release](#jenkins-(or-any-ci)-build-number-in-release)
 ----
 
 ## Importing a Pre-Existing File Tree
@@ -226,19 +227,20 @@ and
 This "chapter" is very much intertwined, so you'll have to rip out the parts you want.
 
 #### Reasoning
- * Branch or Tag in Release: When checking what version of your software is installed on a machine, it's nice to instantly be able to tell if it's one of your "release" versions or a development branch that somebody was working with.
- * Monotonic Release Numbers: Git hashes aren't easily sorted, so there's no way for `rpm`/`yum`/`dnf` to know that `7289cc5` is actually _newer_ than `7289cc5`.
- * Embedding Source Hash: There's nothing better than "ground truth" when somebody asks for help and they can tell you _exactly_ what RPMs they're dealing with thanks to  `rpm -qi yourpackage`.
- * Build Number in Release: When testing RPMs, it's easier to go back and see what build created the RPMs.
+ * **Branch or Tag in Release**: When checking what version of your software is installed on a machine, it's nice to instantly be able to tell if it's one of your "release" versions or a development branch that somebody was working with.
+ * **Monotonic Release Numbers**: Git hashes aren't easily sorted, so there's no way for `rpm`/`yum`/`dnf` to know that `7289cc5` is actually _newer_ than `7289cc5`.
+  * This allows your CI process to update a repository and `yum upgrade` does the right thing.
+ * **Embedding Source Hash**: There's nothing better than "ground truth" when somebody asks for help and they can tell you _exactly_ what RPMs they're dealing with thanks to  `rpm -qi yourpackage`.
+ * **Build Number in Release**: When testing RPMs, it's easier to go back and see what CI job created the RPMs.
 
 ### How It Works
-A little `git` command-line magic (along with some `perl` regex) gets us what we want. It's not obviously straight-forward because it works around various problematic scenarios that I've experienced:
+A little `git` command-line magic (along with some `perl` and `sed` regex) gets us what we want. It's not obviously straight-forward because it works around various problematic scenarios that I've experienced:
  * Detached `HEAD` build (*e.g.* Jenkins)
  * It's in both a branch *and* a tag
  * `origin` has moved forward since the checkout happened, but _before_ our code is run, resulting in things like `mybranch~2`
- * The branch name is obnoxiously long because it has a prefix like `bugfix--BUG13`
+ * The branch name is obnoxiously long because it has a prefix like `bugfix--BUG13-Broken-CLI`
    * *Any* prefix ending in `--` is stripped
- * The branch has `.` or other characters in it that are invalid for the RPM release field
+ * The branch has "." or other characters in it that are invalid for the RPM release field
  * A "release version" is in a specially named _branch_ (not tag) of the format `v1.0` or `v.1.1.3`
 
 To compute the monotonic number, it counts the number of six-minute time periods that have passed since the last release (which requires a manual "bump" in the `Makefile`).
@@ -253,7 +255,7 @@ External information needed:
 | `RPM_TEMP`     | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM |
 
 
-Obviously, `BUILD_NUMBER` is Jenkins-specific. It could just as easily be `CI_JOB_ID` on [GitLab](https://docs.gitlab.com/ee/ci/variables/) or `TRAVIS_BUILD_NUMBER` for [Travis-CI](https://docs.travis-ci.com/user/environment-variables/#default-environment-variables).
+Obviously, `BUILD_NUMBER` is Jenkins-specific. It could just as easily be `CI_JOB_ID` on [GitLab](https://docs.gitlab.com/ee/ci/variables/predefined_variables.html) or `TRAVIS_BUILD_NUMBER` for [Travis-CI](https://docs.travis-ci.com/user/environment-variables/#default-environment-variables).
 
 #### Recipe
 This recipe has two parts, a [`Makefile`](git/Makefile) and a [specfile](git/project.spec).
@@ -268,14 +270,14 @@ release?=snapshot$(tag)$(git_tag)
 
 RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 
-##### Set variables that affect the naming of the release packages
+##### Set variables that affect the naming of the packages
 # The general package naming scheme is:
 # <project>-<version>[-<release>][_<tag>][_J<job>][_<branch>][<dist>]
 # where:
 # <project> is our base project name
 # <version> is a normal versioning scheme 1.2.3
-# <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
-#          Omitted for an actual official release
+# <release> is a label that defaults to "snapshot" if not overridden
+
 # These are only applied if not a specific versioned release:
 # <tag> is a monotonic sequence number/timestamp within a release cycle (when not a specific release)
 # <job> is a Jenkins job reference if this process is run under Jenkins
@@ -285,7 +287,6 @@ RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle.
 timestamp := $(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4429931))
-##### Set variables based on what git can tell us
 # Get the git branch and clean it up from various prefixes and suffixes tacked on
 git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
                               perl -pe 's/~[^\d]*$//' | perl -pe 's/^.*?--//'))
@@ -332,7 +333,7 @@ Summary: My Project That Likes Git
 
 # Remove this line if you have executables with debug info in the source tree:
 %global debug_package %{nil}
-BuildRequires: git sed tar
+
 
 %description
 Not much to say. Nothing in here. But, I know where I came from:
@@ -355,13 +356,6 @@ Not much to say. Nothing in here. But, I know where I came from:
 # None
 
 ```
-
-----
-
-## Jenkins Job Number in Release
-### Reasoning
-
-### Recipe
 
 ----
 
