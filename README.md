@@ -8,11 +8,13 @@ Table of Contents
     * [Extract a Single File](#extract-a-single-file)
     * [Change (or No) Compression](#change-(or-no)-compression)
     * [Set Output of a Shell Command Into Variable](#set-output-of-a-shell-command-into-variable)
+    * [Warn User if Wrong Distribution](#warn-user-if-wrong-distribution)
   * [How to...](#how-to)
     * [Define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
     * [Call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
     * [Disable debug packaging](#disable-debug-packaging)
     * [Include Jenkins (or Any CI) Job Number in Release](#include-jenkins-(or-any-ci)-job-number-in-release)
+    * [Provide Older Versions of Libraries](#provide-older-versions-of-libraries)
   * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
   * [Git Problems and Tricks](#git-problems-and-tricks)
     * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
@@ -31,7 +33,7 @@ Table of Contents
 Cookbook of RPM techniques
 
 ## Overview
-I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I come across. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines).
+I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I come across. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines). It's also *not* a generic "How To Make RPMs" guide, but more of a "shining a flashlight into a dusty corner to see if I can do *this*."
 
 Each "chapter" is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include), so they are available individually in the git repo. No need to copy and paste from your browser; clone the source!
 
@@ -71,7 +73,25 @@ These will send `-0` to `gzip` to effectively not compress. The `0` can be 0-9 t
 ### Set Output of a Shell Command Into Variable
 As noted [here](https://stackoverflow.com/a/10694815/836748):
 ```rpm-spec
-%global your_var %(shell your commands)
+%global your_var %(your commands)
+```
+
+### Warn User if Wrong Distribution
+On a previous project, we had people install the CentOS 7 RPMs on a CentOS 6 box. Normally, this would fail because things like your C libraries won't match. But it was a `noarch` package... This was helpful; figured I would include it here; it is *very* CentOS-specific:
+```rpm-spec
+# Check if somebody is installing on the wrong platform (AV-721)
+if [ -n "%{dist}" ]; then
+  PKG_VER=`echo %{dist} | perl -ne '/el(\d)/ && print $1'`
+  THIS_VER=`perl -ne '/release (\d)/ && print $1' /etc/redhat-release`
+  if [ -n "${PKG_VER}" -a -n "${THIS_VER}" ]; then
+    if [ ${PKG_VER} -ne ${THIS_VER} ]; then
+      for i in `seq 20`; do echo ""; done
+        echo "WARNING: This RPM is for CentOS${PKG_VER}, but you seem to be running CentOS${THIS_VER}" >&2
+        echo "You might want to uninstall these RPMs immediately and get the CentOS${THIS_VER} version." >&2
+      for i in `seq 5`; do echo "" >&2; done
+    fi
+  fi
+fi
 ```
 
 ----
@@ -95,6 +115,10 @@ While **not recommended**, because debug packages are very useful, this is shown
 ### Include Jenkins (or Any CI) Job Number in Release
 
 This is shown in the `git` chapter as [Jenkins Build Number in Release](#jenkins-build-number-in-release)
+
+### Provide Older Versions of Libraries
+
+This is normally done using a `compat` package; an example is shown in [Symlinks to Latest](#symlinks-to-latest)
 ----
 
 ## Importing a Pre-Existing File Tree
@@ -156,14 +180,14 @@ default: rpm
 .SILENT: clean rpm $(TARBALL) filelist.txt
 
 clean:
-	rm -rf $(RPM_TEMP) $(TARBALL) $(PROJECT)*.rpm filelist.txt
+	rm -vrf $(RPM_TEMP) $(TARBALL) $(PROJECT)*.rpm filelist.txt
 
 rpm: $(TARBALL) filelist.txt
 	mkdir -p $(RPM_TEMP)/SOURCES
 	cp --target-directory=$(RPM_TEMP)/SOURCES/ $^
 	rpmbuild -ba \
 		--define="_topdir $(RPM_TEMP)" \
-		--define "outdir $(OUTPUT)" \
+		--define "outdir $(OUTPUT)"    \
 		--define "project_ $(PROJECT)" \
 		--define "version_ $(VERSION)" \
 		--define "release_ $(RELEASE)" \
@@ -309,17 +333,17 @@ $(info PROJECT:$(project): VERSION:$(version): RELEASE:$(release) GIT_HASH:$(git
 
 default: rpm
 .PHONY: clean rpm
-# .SILENT: clean rpm
+.SILENT: clean rpm
 
 clean:
-	rm -rf $(RPM_TEMP) $(project)*.rpm
+	rm -vrf $(RPM_TEMP) $(project)*.rpm
 
 rpm:
 	rpmbuild -ba \
 	  --define="_topdir   $(RPM_TEMP)" \
-	  --define="project_  $(project)"\
-	  --define="version_  $(version)" \
-	  --define="release_  $(release)"\
+	  --define="project_  $(project)"  \
+	  --define="version_  $(version)"  \
+	  --define="release_  $(release)"  \
 	  --define="hash_     $(git_hash)" \
 	  project.spec
 	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
@@ -363,12 +387,228 @@ Not much to say. Nothing in here. But, I know where I came from:
 
 ----
 
-
 ## Having Multiple Versions
 ### Symlinks to Latest
 #### Reasoning
+This one is very specific to a workflow in an office I was in, and might not be "generically" useful. Their pre-RPM deployment method was to extract a tarball into a directory and then update a symlink that ended with `-latest` to point to it. For testing, you could simply manipulate that symlink to point to the versions you wanted to use.
+
+This recipe allows you to build `compat` packages with the old libraries, similar to the official Fedora-recommended practice. However, the multiple version numbers in the RPM name can be confusing, so we replace the "." in the _original_ version with "p", *e.g.* `1.0.1` => `1p0p1`.
+
+### How It Works
+The [`Makefile`](multiple_versions/latest_symlink/Makefile) creates an array to generate 3 RPMs: `myproject`, `myproject-compat1p0p1`, and `myproject-compat1p1`. It will build the RPM(s) using the [specfile](multiple_versions/latest_symlink/project.spec).
+
+**Warning**: The `Makefile` targets `test` and `clean` will use `sudo` to manipulate the demo RPMs to show the various effects of installation order, etc. It is recommended that you review the source before running it to ensure you are comfortable with the commands it is executing as `root` on your machine.
+
+External information accepted:
+| Variable    | Default                                             | Use Case                         |
+|-------------|-----------------------------------------------------|----------------------------------|
+| `rpm_names` | myproject myproject-compat1p0p1 myproject-compat1p1 | RPMs to Build                    |
+| `version`   | 1.2                                                 | Version of the CURRENT Project   |
+| `release`   | 1                                                   | Release/ Build of the RPM        |
+| `RPM_TEMP`  | `{CWD}/rpmbuild-tmpdir`                             | Temporary directory to build RPM |
+
+
+The `specfile` is real where the "real" magic is; it will:
+ * Determine the "base project name" (`%{base_project}`) by removing anything that comes after a "-"
+ * Generate the "latest" symlink name (`%{target_link}`) to be used in various places
+ * Decide if this is the "base" RPM or one of the compatible ones
+  * `%if "%{name}" != "%{base_project}"`
+ * If it determines this is a "compat" RPM, it will:
+  * Generate the version number it is compatible with (`%{compat_version}`)
+  * Automatically tell RPM that this RPM `Obsoletes` the original RPM with the same version numbers
+  * Tells RPM that this RPM also `Provides` a specific _exact_ version of the base RPM
+   * This is needed if you have other RPMs that depend explicitly on certain versions (which is why you're going through this trouble in the first place)
+  * Generate a `%triggerun` stanza that will "take over" the symlink if the base RPM is removed and this one left behind
+ * Generate a `%post` section that will:
+  * If it is **the base RPM**, will *always* point the symlink to itself
+  * If it is **the first compat RPM**, will point the symlink to itself
+ * Generate a `%postun` section that will, if it's the _last_ RPM installed (so updates will not trigger):
+  * Will remove the symlink *iff* it points to the RPM being removed
+  * If possible alternatives still exist (`/<orgdir>/<project>*`), will warn if the symlink is now missing, and will present a list of candidates
+
+Any "business logic" in `%build`, `%install`, etc. should use the same comparison above to determine which files should be used (along with `%{compat_version}`).
+
+What it *doesn't* do / or does "wrong":
+ * It does _not_ declare the symlink as a `%ghost` file; this will cause it to _always_ be removed on _any_ removal
+  * Some more manipulations in `%preun` might be able to get around this, *e.g.* saving off a copy and then putting it back if it pointed elsewhere
+ * It does not properly add the symlink to the RPM database:
+  * No RPMs can depend on the exact path of the "latest" symlink
+  * The RPM DB cannot be queried for it, *e.g.* `rpm -q --whatprovides /path/to/symlink`
 
 #### Recipe
+This recipe has two parts, a [`Makefile`](multiple_versions/latest_symlink/Makefile) and a [specfile](multiple_versions/latest_symlink/project.spec).
+
+[`Makefile`](multiple_versions/latest_symlink/Makefile):
+```Makefile
+# These can be overriden on the command line (but will break test, sorry)
+rpm_names?=myproject myproject-compat1p0p1 myproject-compat1p1
+version?=1.2
+release?=1
+# End of configuration
+
+RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
+
+default: rpms
+.PHONY: clean rpms test
+.SILENT: clean rpms test
+
+clean:
+	rm -vrf $(RPM_TEMP) $(foreach project_, $(rpm_names), $(project_)*.rpm)
+	rpm -q --whatprovides myproject >/dev/null && rpm -q --whatprovides myproject | xargs -rt sudo rpm -ev || :
+
+define do_build
+	rpmbuild -ba \
+	  --define="_topdir   $(RPM_TEMP)" \
+	  --define="project_  $(project_)" \
+	  --define="version_  $(version)"  \
+	  --define="release_  $(release)"  \
+	  project.spec
+	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
+endef
+
+rpms:
+	$(foreach project_, $(rpm_names), $(do_build);)
+
+test: clean rpms
+	echo "Install main RPM:"
+	sudo rpm -i myproject-1.2-1.noarch.rpm
+	echo "Main RPM provides:"
+	rpm -q --provides myproject
+	tree -a /opt/my_org/
+	echo "Install compat RPMs:"
+	sudo rpm -i myproject-compat1p0p1-1.2-1.noarch.rpm myproject-compat1p1-1.2-1.noarch.rpm
+	echo "Compat RPMs provide:"
+	rpm -q --provides myproject-compat1p0p1 myproject-compat1p1 | sort
+	echo "Who provides ANY 'myproject'?"
+	rpm -q --whatprovides myproject
+	echo "Compat RPMs do not take over symlink:"
+	tree -a /opt/my_org/
+	echo "Removing all (expect a warning):"
+	sudo rpm -e myproject myproject-compat1p0p1 myproject-compat1p1
+	# tree -a /opt/my_org/
+	echo "Now install compat 1.0.1 only:"
+	sudo rpm -i myproject-compat1p0p1-1.2-1.noarch.rpm
+	echo "Latest should be compat 1.0.1:"
+	tree -a /opt/my_org/
+	echo "Now install compat 1.1 only:"
+	sudo rpm -i myproject-compat1p1-1.2-1.noarch.rpm
+	echo "Latest should be compat 1.0.1 still - FIRST compat installed 'wins':"
+	tree -a /opt/my_org/
+	echo "Install regular; should overwrite symlink (will warn):"
+	sudo rpm -i myproject-1.2-1.noarch.rpm
+	tree -a /opt/my_org/
+	echo "Removing compat 1.0.1 only (so no warning about broken link):"
+	sudo rpm -e myproject-compat1p0p1
+	tree -a /opt/my_org/
+	echo "Now removing main package (should be told that 1.1 is a candidate):"
+	sudo rpm -e myproject
+	tree -a /opt/my_org/
+	echo "Removing compat 1.1 only (no warnings; removed symlink but no candidates remain):"
+	sudo rpm -e myproject-compat1p1
+	echo "Now install compat 1.1 only:"
+	sudo rpm -i myproject-compat1p1-1.2-1.noarch.rpm
+	echo "Symlink now 1.1:"
+	tree -a /opt/my_org/
+	echo "Now install compat 1.0.1 and immediately deleting (it should leave symlink alone):"
+	sudo rpm -i myproject-compat1p0p1-1.2-1.noarch.rpm
+	sudo rpm -e myproject-compat1p0p1
+	tree -a /opt/my_org/
+	echo "Removing compat 1.1 only (should clean up the symlink):"
+	sudo rpm -e myproject-compat1p1
+	echo "What's left behind in /opt/my_org/:"
+	tree -a /opt/my_org/
+
+```
+
+[specfile](multiple_versions/latest_symlink/project.spec):
+```rpm-spec
+Name: %{project_}
+Version: %{version_}
+Release: %{release_}
+BuildArch: noarch
+License: MIT
+Summary: My Project That Likes Symlinks
+
+# Remove this line if you have executables with debug info in the source tree:
+%global debug_package %{nil}
+
+%global orgdir /opt/my_org
+%global outdir %{orgdir}/%{name}
+# Compute the "base" project name if we are myproj-compatXpY
+%global base_project %(echo %{name} | cut -f1 -d-)
+%global target_link %{orgdir}/%{base_project}-latest
+
+%if "%{name}" != "%{base_project}"
+BuildRequires: /usr/bin/perl
+%global compat_version %(echo %{name} | perl -ne '/-compat(.*)/ && print $1' | tr p .)
+Obsoletes: %{base_project} = %{compat_version}
+Provides: %{base_project} = %{compat_version}
+# Take over symlink if needed
+%triggerun -- %{base_project}
+[ $2 = 0 ] || exit 0
+if [ ! -e %{target_link} ]; then
+  >&2 echo "%{name}: %{target_link} was removed; pointing it at me instead"
+  ln -s %{outdir} %{target_link}
+fi
+%endif
+
+%description
+Not much to say. Nothing in here.
+
+But we share the symlink %{target_link} across two or more packages.
+
+%prep
+# Empty; rpmlint recommendeds it is present anyway
+
+%build
+# Empty; rpmlint recommendeds it is present anyway
+
+%install
+%{__mkdir_p} %{buildroot}/%{outdir}/
+touch %{buildroot}/%{outdir}/myfile.txt
+
+%post
+%if "%{name}" != "%{base_project}"
+# We are "compat" package - only write symlink if it doesn't already exist
+if [ ! -e %{target_link} ]; then
+  >&2 echo "%{name}: %{target_link} does not yet exist; setting it to point to compat-%{compat_version}"
+  ln -s %{outdir} %{target_link}
+fi
+%else
+# We are main package - always take over symlink
+if [ -e %{target_link} ]; then
+  >&2 echo "%{name}: %{target_link} being updated. Was `readlink -e %{target_link}`"
+  rm -f %{target_link}
+fi
+
+# Add a symlink to "us"
+ln -s %{outdir} %{target_link}
+%endif
+
+%postun
+[ $1 = 0 ] || exit 0
+# See if symlink points to us explicitly
+if [ x"%{outdir}" == x"`readlink %{target_link}`" ]; then
+  rm -f %{target_link}
+fi
+
+# All packages warn about missing symlink if there are potential candidates
+if [ ! -e %{target_link} ]; then
+  CANDIDATES=$(cd %{orgdir} && find . -maxdepth 1 -type d -name '%{base_project}*')
+  if [ -n "${CANDIDATES}" ]; then
+    >&2 echo "%{name}: %{target_link} is removed and may need to be manually updated; candidate(s): ${CANDIDATES}"
+  fi
+fi
+
+%clean
+%{__rm} -rf --preserve-root %{buildroot}
+
+%files
+%dir %{outdir}
+%{outdir}/myfile.txt
+
+
+```
 
 ----
 
