@@ -8,11 +8,10 @@ OUTPUT?=/opt/project
 
 # End of configuration
 $(info PROJECT:$(PROJECT): VERSION:$(VERSION): RELEASE:$(RELEASE))
+
 # Make's realpath won't expand ~
 REAL_INPUT=$(shell realpath -e $(INPUT))
-
 TARBALL?=$(PROJECT).tar
-
 RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 
 ifeq ($(REAL_INPUT),)
@@ -32,7 +31,7 @@ rpm: $(TARBALL) filelist.txt
 	cp --target-directory=$(RPM_TEMP)/SOURCES/ $^
 	rpmbuild -ba \
 		--define="_topdir $(RPM_TEMP)" \
-		--define "outdir $(OUTPUT)"    \
+		--define "outdir  $(OUTPUT)"   \
 		--define "project_ $(PROJECT)" \
 		--define "version_ $(VERSION)" \
 		--define "release_ $(RELEASE)" \

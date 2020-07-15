@@ -16,11 +16,12 @@ Summary: My Project That Likes Symlinks
 
 %if "%{name}" != "%{base_project}"
 BuildRequires: /usr/bin/perl
+# Convert that myproj-compatXpY to X.Y
 %global compat_version %(echo %{name} | perl -ne '/-compat(.*)/ && print $1' | tr p .)
 Obsoletes: %{base_project} = %{compat_version}
 Provides: %{base_project} = %{compat_version}
-# Take over symlink if needed
-%triggerun -- %{base_project}
+# Take over symlink if needed (if main is removed)
+%triggerpostun -- %{base_project}
 [ $2 = 0 ] || exit 0
 if [ ! -e %{target_link} ]; then
   >&2 echo "%{name}: %{target_link} was removed; pointing it at me instead"

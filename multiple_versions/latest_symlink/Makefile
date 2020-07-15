@@ -41,9 +41,8 @@ test: clean rpms
 	rpm -q --whatprovides myproject
 	echo "Compat RPMs do not take over symlink:"
 	tree -a /opt/my_org/
-	echo "Removing all (expect a warning):"
+	echo "Removing all (depending on order, a warning may occur):"
 	sudo rpm -e myproject myproject-compat1p0p1 myproject-compat1p1
-	# tree -a /opt/my_org/
 	echo "Now install compat 1.0.1 only:"
 	sudo rpm -i myproject-compat1p0p1-1.2-1.noarch.rpm
 	echo "Latest should be compat 1.0.1:"
@@ -58,7 +57,7 @@ test: clean rpms
 	echo "Removing compat 1.0.1 only (so no warning about broken link):"
 	sudo rpm -e myproject-compat1p0p1
 	tree -a /opt/my_org/
-	echo "Now removing main package (should be told that 1.1 is a candidate):"
+	echo "Now removing main package (should be told that 1.1 is a candidate; 1.1 should step up):"
 	sudo rpm -e myproject
 	tree -a /opt/my_org/
 	echo "Removing compat 1.1 only (no warnings; removed symlink but no candidates remain):"
@@ -67,7 +66,7 @@ test: clean rpms
 	sudo rpm -i myproject-compat1p1-1.2-1.noarch.rpm
 	echo "Symlink now 1.1:"
 	tree -a /opt/my_org/
-	echo "Now install compat 1.0.1 and immediately deleting (it should leave symlink alone):"
+	echo "Now install compat 1.0.1 and immediately delete (it should leave symlink alone):"
 	sudo rpm -i myproject-compat1p0p1-1.2-1.noarch.rpm
 	sudo rpm -e myproject-compat1p0p1
 	tree -a /opt/my_org/

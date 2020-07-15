@@ -6,10 +6,10 @@ I'm a little reluctant to include this, because doing it the "right way" isn't a
 
 **This is not recommended** but sometimes inevitable:
  * The build system is too complicated (seldom)
- * You're packaging something already installed
-   * that you have no control over
-   * was installed by a GUI installer and you want to repackage
-   * you don't have source code for
+ * You're packaging something already installed that...
+   * ... you have no control over
+   * ... was installed by a GUI installer and you want to repackage for local usage
+   * ... you don't have source code for
 
 ### How It Works
 The `Makefile` takes various variables and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.

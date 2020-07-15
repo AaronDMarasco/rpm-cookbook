@@ -7,7 +7,7 @@ Cookbook of RPM techniques
 ## Overview !heading
 I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I come across. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines). It's also *not* a generic "How To Make RPMs" guide, but more of a "shining a flashlight into a dusty corner to see if I can do *this*."
 
-Each "chapter" is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include). All files are available individually in the git repo &mdash; no need to copy and paste from your browser; clone the source!
+Each chapter is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include). All files are available individually in the git repo &mdash; no need to copy and paste from your browser; clone the source!
 
 Feel free to create a new chapter and submit a PR!
 ----

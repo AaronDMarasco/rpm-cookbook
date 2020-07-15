@@ -15,9 +15,9 @@ RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 # <release> is a label that defaults to "snapshot" if not overridden
 
 # These are only applied if not a specific versioned release:
-# <tag> is a monotonic sequence number/timestamp within a release cycle (when not a specific release)
+# <tag> is a monotonic sequence number/timestamp within a release cycle
 # <job> is a Jenkins job reference if this process is run under Jenkins
-# <branch> is a git branch reference if not "master" or "undefined"
+# <branch> is a git branch reference if not "master" or cannot be determined
 # <dist> added by RPM building, e.g. el7.x86_64
 
 # This changes every 6 minutes which is enough for updated releases (snapshots).

@@ -8,7 +8,6 @@ Summary: My Project That Likes Git
 # Remove this line if you have executables with debug info in the source tree:
 %global debug_package %{nil}
 
-
 %description
 Not much to say. Nothing in here. But, I know where I came from:
 
