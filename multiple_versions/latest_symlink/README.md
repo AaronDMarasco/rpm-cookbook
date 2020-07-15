@@ -32,7 +32,7 @@ The `specfile` is where the "real" magic is; it will:
      * *Note*: If you have multiple compat versions, which one will perform this is nondeterministic!
  * Generate a `%post` section that will:
    * If it is **the base RPM**, will *always* point the symlink to itself
-   * If it is **the first compat RPM**, will point *a new symlink* to itself *iff* one doesn't already exist
+   * If it is **a compat RPM**, will point *a new symlink* to itself *iff* one doesn't already exist
  * Generate a `%postun` section that will, if it's the _last_ RPM uninstalled (so updates will not trigger):
    * Will remove the symlink *iff* it points to the RPM being removed
    * If possible alternatives still exist (`/<orgdir>/<project>*`), will warn if the symlink is now missing, and will present a list of candidates
