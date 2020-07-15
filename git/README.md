@@ -5,7 +5,7 @@ and
 and
 ### Embedding Source Hash in Description !heading
 and
-### Jenkins (or Any CI) Build Number in Release !heading
+### Jenkins Build Number in Release !heading
 #### Overview
 This "chapter" is very much intertwined, so you'll have to rip out the parts you want.
 

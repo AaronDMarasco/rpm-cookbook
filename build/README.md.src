@@ -28,8 +28,8 @@ This is shown in:
 While **not recommended**, because debug packages are very useful, this is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
  * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
-### include Jenkins Job Number in Release !heading
-This is shown in the `git` chapter as [Jenkins (or Any CI) Build Number in Release](#jenkins-(or-any-ci)-build-number-in-release)
+### include Jenkins (or Any CI) Job Number in Release !heading
+This is shown in the `git` chapter as [Jenkins Build Number in Release](#jenkins-build-number-in-release)
 ----
 
 #include "../pre-existing_file_tree/README.md"
