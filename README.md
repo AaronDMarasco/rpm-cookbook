@@ -106,24 +106,20 @@ fi
 
 ## How to...
 ### Define Version, Release, etc. in another file, environment variable, etc.
-
 This is shown in most chapters, including [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree).
 
 ### Call `rpmbuild` from a `Makefile`
-
 This is shown in most chapters, including [Git Branch or Tag in Release](#git-branch-or-tag-in-release).
 
 ### Disable debug packaging
-
 While **not recommended**, because debug packages are very useful, this is shown in most chapters as well.
 
 ### Include Jenkins (or Any CI) Job Number in Release
-
 This is shown in the `git` chapter as [Jenkins Build Number in Release](#jenkins-build-number-in-release)
 
 ### Provide Older Versions of Libraries
-
 This is normally done using a `compat` package; an example is shown in [Symlinks to Latest](#symlinks-to-latest)
+
 ----
 
 ## Importing a Pre-Existing File Tree
