@@ -1,11 +1,11 @@
 ## Quick Tips !heading
-In reviewing some of the most highly voted answers on Stack Overflow, I decided to collate a few:
+In reviewing some of the most highly voted answers on Stack Overflow, I decided to gather a few here that don't require a full example to explain:
 
 ### Don't Put Single % In Comments !heading
-This happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%` or a multi-line macro will only have the first line commented out!
+This happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%`, or a multi-line macro will only have the first line commented out!
 
 ### Extract All Files !heading
-Use `rpm2cpio` with `cpio`:
+Use `rpm2cpio` with `cpio`. This will extract all files treating the current directory as `/`:
 ```bash
 $ rpm2cpio package-version.rpm | cpio -div
 ```
@@ -34,10 +34,16 @@ As noted [here](https://stackoverflow.com/a/10694815/836748):
 %global your_var %(your commands)
 ```
 
+### Request User Input on Install !heading
+**Don't**. This breaks *many* things, for example automated configuration (KickStart or puppet).
+
+### Provide Output to User on Install !heading
+`rpm` will show all commands if told to be "extra verbose" with `-vv`. However, all output to `stderr` is shown to the user. Specific syntax can be found in many recipes, including an extreme example [below](#warn-user-if-wrong-distribution).
+
 ### Warn User if Wrong Distribution !heading
-On a previous project, we had people install the CentOS 7 RPMs on a CentOS 6 box. Normally, this would fail because things like your C libraries won't match. But it was a `noarch` package... This was helpful; figured I would include it here; it is *very* CentOS-specific:
-```rpm-spec
-# Check if somebody is installing on the wrong platform (AV-721)
+On a previous project, we had people install the CentOS 7 RPMs on a CentOS 6 box. Normally, this would fail because things like your C libraries won't match. But it was a `noarch` package... This was helpful; figured I would include it here. Unfortunately, it is *very* CentOS-specific:
+```bash
+# Check if somebody is installing on the wrong platform
 if [ -n "%{dist}" ]; then
   PKG_VER=`echo %{dist} | perl -ne '/el(\d)/ && print $1'`
   THIS_VER=`perl -ne '/release (\d)/ && print $1' /etc/redhat-release`
