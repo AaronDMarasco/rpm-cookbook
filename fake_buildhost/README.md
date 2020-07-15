@@ -8,7 +8,7 @@ Newer versions of `rpmbuild` support defining `_buildhost`; I have not tested th
 It sets [`LD_PRELOAD`](view-source:https://man7.org/linux/man-pages/man8/ld.so.8.html) to intercept all 32- or 64-bit calls to [`gethostname()`](https://man7.org/linux/man-pages/man2/gethostname.2.html) and [`gethostbyname()`](https://man7.org/linux/man-pages/man3/gethostbyname.3.html) to replace them with the text you provide. Only later versions of `rpmbuild` call `gethostbyname()`.
 
 ### Recipe
-This recipe requires you wrap your `rpmbuild` command with a script or `Makefile`. Using the `Makefile` below, you would have `make` call `$(SPOOF_HOSTNAME) rpmbuild ...`.
+This recipe requires you wrap your `rpmbuild` command with a script or `Makefile`. Using the `Makefile` below, you would have `make` call `$(SPOOF_HOSTNAME) rpmbuild`.
 
 There is a default target `testrpm` that will build some RPMs with and without the hostname spoofing as an example; at its conclusion you should see:
 ```
@@ -16,7 +16,7 @@ Build hosts: (with spoof)
 Build Host  : buildhost_x86_64.myprojectname.proj
 Build Host  : buildhost_x86_64.myprojectname.proj
 ```
-Scroll back in your terminal and compare this to the default output after "Build hosts: (without spoof)".
+Scroll back in your terminal and compare this to the default output after "`Build hosts: (without spoof)`".
 
 Edit the `Makefile` yourself where it says "`.myprojectname.proj`" - you can optionally _not_ have it use the `buildhost_<arch>` prefix as well.
 
