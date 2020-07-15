@@ -1,20 +1,24 @@
 Table of Contents
 
 * [rpm-cookbook](#rpm-cookbook)
-  * [How to...](#how-to)
-    * [... define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
-    * [... call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
-    * [... disable debug packaging](#disable-debug-packaging)
+  * [Overview](#overview)
   * [Quick Tips](#quick-tips)
     * [Don't Put Single % In Comments](#don't-put-single-%-in-comments)
     * [Extract All Files](#extract-all-files)
     * [Extract a Single File](#extract-a-single-file)
     * [Change (or No) Compression](#change-(or-no)-compression)
-    * [Set Output of a Random Shell Command Into Variable](#set-output-of-a-random-shell-command-into-variable)
+    * [Set Output of a Shell Command Into Variable](#set-output-of-a-shell-command-into-variable)
+  * [How to...](#how-to)
+    * [... define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
+    * [... call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
+    * [... disable debug packaging](#disable-debug-packaging)
+    * [... put the `git` hash of your source in the RPM description field](#put-the--git--hash-of-your-source-in-the-rpm-description-field)
   * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
-  * [Git Problems](#git-problems)
+  * [Git Problems and Tricks](#git-problems-and-tricks)
     * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
     * [Monotonic Release Numbers](#monotonic-release-numbers)
+    * [Embedding Source Hash in Description](#embedding-source-hash-in-description)
+    * [Jenkins (or Any CI) Build Number in Release](#jenkins-(or-any-ci)-build-number-in-release)
   * [Jenkins Job Number in Release](#jenkins-job-number-in-release)
   * [Having Multiple Versions](#having-multiple-versions)
     * [Symlinks to Latest](#symlinks-to-latest)
@@ -27,22 +31,12 @@ Table of Contents
 # rpm-cookbook
 Cookbook of RPM techniques
 
-I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I see. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines).
+## Overview
+I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I come across. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines).
 
-Each "chapter" is a separate directory, and any specfiles or `Makefile`s are transcluded, so they are available as source files in the git repo. No need to copy and paste from your browser!
+Each "chapter" is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include), so they are available individually in the git repo. No need to copy and paste from your browser; clone the source!
 
 Feel free to create a new chapter and submit a PR!
-
-## How to...
-### ... define Version, Release, etc. in another file, environment variable, etc.
-This is shown in:
- * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
-### ... call `rpmbuild` from a `Makefile`
-This is shown in:
- * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
-### ... disable debug packaging
-While **not recommended**, because debug packages are very useful, this is shown in:
- * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
 ----
 
 ## Quick Tips
@@ -75,12 +69,27 @@ These will send `-0` to `gzip` to effectively not compress. The `0` can be 0-9 t
  * `bz` for bzip2
  * `xz` for XZ/LZMA (on some versions of RPM)
 
-### Set Output of a Random Shell Command Into Variable
+### Set Output of a Shell Command Into Variable
 As noted [here](https://stackoverflow.com/a/10694815/836748):
 ```rpm-spec
 %global your_var %(shell your commands)
 ```
 
+----
+
+## How to...
+### ... define Version, Release, etc. in another file, environment variable, etc.
+This is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+### ... call `rpmbuild` from a `Makefile`
+This is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+### ... disable debug packaging
+While **not recommended**, because debug packages are very useful, this is shown in:
+ * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+### ... put the `git` hash of your source in the RPM description field
+This is shown in:
+ * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
 ----
 
 ## Importing a Pre-Existing File Tree
@@ -96,6 +105,20 @@ I'm a little reluctant to include this, because doing it the "right way" isn't a
    * was installed by a GUI installer and you want to repackage
    * you don't have source code for
 
+### How It Works
+The `Makefile` takes various variables and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
+
+|  Variable  |         Default         |             Use Case             |
+|:----------:|:-----------------------:|:--------------------------------:|
+| `INPUT`    | `/opt/project`          | Source Tree to Copy              |
+| `OUTPUT`   | `/opt/project`          | Destination on Target Machine    |
+| `PROJECT`  | myproject               | Base Name of the RPM             |
+| `VERSION`  | 0.1                     | Version of the RPM               |
+| `RELEASE`  | 1                       | Release/ Build of the RPM        |
+| `TARBALL`  | `{PROJECT}.tar`         | Temporary tarball used to build  |
+| `RPM_TEMP` | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM |
+
+
 ### Recipe
 This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an example [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
 
@@ -110,6 +133,7 @@ INPUT?=/opt/project
 OUTPUT?=/opt/project
 
 # End of configuration
+$(info PROJECT:$(PROJECT): VERSION:$(VERSION): RELEASE:$(RELEASE))
 # Make's realpath won't expand ~
 REAL_INPUT=$(shell realpath -e $(INPUT))
 
@@ -188,35 +212,149 @@ tar tf %{SOURCE0} | sed -e 's|^%{name}-%{version}|%{outdir}|' > parsed_filelist.
 
 ```
 
-### How It Works
-The `Makefile` takes various variables and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
-
-|  Variable  |         Default         |             Use Case             |
-|:----------:|:-----------------------:|:--------------------------------:|
-| `INPUT`    | `/opt/project`          | Source Tree to Copy              |
-| `OUTPUT`   | `/opt/project`          | Destination on Target Machine    |
-| `PROJECT`  | myproject               | Base Name of the RPM             |
-| `VERSION`  | 0.1                     | Version of the RPM               |
-| `RELEASE`  | 1                       | Release/ Build of the RPM        |
-| `TARBALL`  | `{PROJECT}.tar`         | Temporary tarball used to build  |
-| `RPM_TEMP` | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM |
-
-
 ----
 
-
-## Git Problems
+## Git Problems and Tricks
 ### Git Branch or Tag in Release
-#### Reasoning
-
-#### Recipe
-
-----
-
+and
 ### Monotonic Release Numbers
+and
+### Embedding Source Hash in Description
+and
+### Jenkins (or Any CI) Build Number in Release
+#### Overview
+This "chapter" is very much intertwined, so you'll have to rip out the parts you want.
+
 #### Reasoning
+ * Branch or Tag in Release: When checking what version of your software is installed on a machine, it's nice to instantly be able to tell if it's one of your "release" versions or a development branch that somebody was working with.
+ * Monotonic Release Numbers: Git hashes aren't easily sorted, so there's no way for `rpm`/`yum`/`dnf` to know that `7289cc5` is actually _newer_ than `7289cc5`.
+ * Embedding Source Hash: There's nothing better than "ground truth" when somebody asks for help and they can tell you _exactly_ what RPMs they're dealing with thanks to  `rpm -qi yourpackage`.
+ * Build Number in Release: When testing RPMs, it's easier to go back and see what build created the RPMs.
+
+### How It Works
+A little `git` command-line magic (along with some `perl` regex) gets us what we want. It's not obviously straight-forward because it works around various problematic scenarios that I've experienced:
+ * Detached `HEAD` build (*e.g.* Jenkins)
+ * It's in both a branch *and* a tag
+ * `origin` has moved forward since the checkout happened, but _before_ our code is run, resulting in things like `mybranch~2`
+ * The branch name is obnoxiously long because it has a prefix like `bugfix--BUG13`
+   * *Any* prefix ending in `--` is stripped
+ * The branch has `.` or other characters in it that are invalid for the RPM release field
+ * A "release version" is in a specially named _branch_ (not tag) of the format `v1.0` or `v.1.1.3`
+
+To compute the monotonic number, it counts the number of six-minute time periods that have passed since the last release (which requires a manual "bump" in the `Makefile`).
+
+External information needed:
+|    Variable    |         Default         |             Use Case             |
+|:--------------:|:-----------------------:|:--------------------------------:|
+| `project`      | myproject               | Base Name of the RPM             |
+| `version`      | 0.1                     | Version of the RPM               |
+| `release`      | snapshot<etc...>        | Release/ Build of the RPM        |
+| `BUILD_NUMBER` | (n/a)                   | Job number from Jenkins          |
+| `RPM_TEMP`     | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM |
+
+
+Obviously, `BUILD_NUMBER` is Jenkins-specific. It could just as easily be `CI_JOB_ID` on [GitLab](https://docs.gitlab.com/ee/ci/variables/) or `TRAVIS_BUILD_NUMBER` for [Travis-CI](https://docs.travis-ci.com/user/environment-variables/#default-environment-variables).
 
 #### Recipe
+This recipe has two parts, a [`Makefile`](git/Makefile) and a [specfile](git/project.spec).
+
+[`Makefile`](git/Makefile):
+```Makefile
+# These can be overriden on the command line
+project?=myproject
+version?=$(or $(git_version),0.1)
+release?=snapshot$(tag)$(git_tag)
+# End of configuration
+
+RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
+
+##### Set variables that affect the naming of the release packages
+# The general package naming scheme is:
+# <project>-<version>[-<release>][_<tag>][_J<job>][_<branch>][<dist>]
+# where:
+# <project> is our base project name
+# <version> is a normal versioning scheme 1.2.3
+# <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
+#          Omitted for an actual official release
+# These are only applied if not a specific versioned release:
+# <tag> is a monotonic sequence number/timestamp within a release cycle (when not a specific release)
+# <job> is a Jenkins job reference if this process is run under Jenkins
+# <branch> is a git branch reference if not "master" or "undefined"
+# <dist> added by RPM building, e.g. el7.x86_64
+
+# This changes every 6 minutes which is enough for updated releases (snapshots).
+# It is rebased after a release so it is relative within its release cycle.
+timestamp := $(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4429931))
+##### Set variables based on what git can tell us
+# Get the git branch and clean it up from various prefixes and suffixes tacked on
+git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
+                              perl -pe 's/~[^\d]*$//' | perl -pe 's/^.*?--//'))
+git_version:=$(shell echo $(git_branch) | perl -ne '/^v[\.\d]+$/ && print')
+git_hash   :=$(shell h=`(git tag --points-at HEAD | head -n1) 2>/dev/null`;\
+                     [ -z "$h" ] && h=`git rev-list --max-count=1 HEAD`; echo $h)
+# Any non alphanumeric (or .) strings converted to single _
+git_tag    :=$(if $(git_version),,$(strip\
+               $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER)))$(strip\
+               $(if $(filter-out undefined master,$(git_branch)),\
+                    _$(shell echo $(git_branch) | sed -e 's/[^A-Za-z0-9.]\+/_/g'))))
+tag:=$(if $(git_version),,_$(timestamp))
+
+# $(info GIT_BRANCH:$(git_branch): GIT_VERSION:$(git_version): GIT_HASH:$(git_hash): GIT_TAG:$(git_tag): TAG:$(tag))
+$(info PROJECT:$(project): VERSION:$(version): RELEASE:$(release) GIT_HASH:$(git_hash):)
+
+default: rpm
+.PHONY: clean rpm
+# .SILENT: clean rpm
+
+clean:
+	rm -rf $(RPM_TEMP) $(project)*.rpm
+
+rpm:
+	rpmbuild -ba \
+	  --define="_topdir   $(RPM_TEMP)" \
+	  --define="project_  $(project)"\
+	  --define="version_  $(version)" \
+	  --define="release_  $(release)"\
+	  --define="hash_     $(git_hash)" \
+	  project.spec
+	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
+
+```
+
+[specfile](git/project.spec):
+```rpm-spec
+Name: %{project_}
+Version: %{version_}
+Release: %{release_}
+BuildArch: noarch
+License: MIT
+Summary: My Project That Likes Git
+
+# Remove this line if you have executables with debug info in the source tree:
+%global debug_package %{nil}
+BuildRequires: git sed tar
+
+%description
+Not much to say. Nothing in here. But, I know where I came from:
+
+%{?hash_:ReleaseID: %{hash_}}
+
+%prep
+# Empty; rpmlint recommendeds it is present anyway
+
+%build
+# Empty; rpmlint recommendeds it is present anyway
+
+%install
+# Empty; rpmlint recommendeds it is present anyway
+
+%clean
+%{__rm} -rf --preserve-root %{buildroot}
+
+%files
+# None
+
+```
 
 ----
 
@@ -241,6 +379,9 @@ The `Makefile` takes various variables and generates a temporary tarball as well
 When distributing RPMs, you might not want people to know the build host. It shouldn't matter to the end user, and your security folks might not want internal hostnames or DNS information published for no good reason.
 
 Newer versions of `rpmbuild` support defining `_buildhost`; I have not tested that capability myself.
+
+### How It Works
+It sets [`LD_PRELOAD`](view-source:https://man7.org/linux/man-pages/man8/ld.so.8.html) to intercept all 32- or 64-bit calls to [`gethostname()`](https://man7.org/linux/man-pages/man2/gethostname.2.html) and replace them with the text you provide.
 
 ### Recipe
 This recipe requires you wrap your `rpmbuild` command with a script or `Makefile`. Using the `Makefile` below, you would have `make` call `$(SPOOF_HOSTNAME) rpmbuild ...`.
@@ -316,9 +457,6 @@ endef
 export libmyhostname_body
 
 ```
-
-### How It Works
-It sets [`LD_PRELOAD`](view-source:https://man7.org/linux/man-pages/man8/ld.so.8.html) to intercept all 32- or 64-bit calls to [`gethostname()`](https://man7.org/linux/man-pages/man2/gethostname.2.html) and replace them with the text you provide.
 
 
   [1]: https://stackoverflow.com/search?q=user:836748+[rpm]
