@@ -1,8 +1,8 @@
 ## Quick Tips !heading
 In reviewing some of the most highly voted answers on Stack Overflow, I decided to gather a few here that don't require a full example to explain:
 
-### Don't Put Single % In Comments !heading
-This happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%`, or a multi-line macro will only have the first line commented out!
+### RPM Preprocessor is Really Dumb !heading
+**Don't** put single `%` in comments... this happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%`, or a multi-line macro will only have the first line commented out! Newer versions of `rpmbuild` will _at least_ warn you now.
 
 ### Extract All Files !heading
 Use `rpm2cpio` with `cpio`. This will extract all files treating the current directory as `/`:
@@ -18,7 +18,7 @@ $ rpm2cpio package-3.8.3.rpm | cpio -iv --to-stdout ./usr/share/doc/package-3.8.
 2173 blocks
 ```
 
-### Change (or No) Compression !heading
+### Change Compression or No Compression !heading
 As noted [here](https://stackoverflow.com/a/10255406/836748):
 ```rpm-spec
 %define _source_payload w0.gzdio
