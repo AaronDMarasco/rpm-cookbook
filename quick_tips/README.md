@@ -31,5 +31,5 @@ These will send `-0` to `gzip` to effectively not compress. The `0` can be 0-9 t
 ### Set Output of a Shell Command Into Variable !heading
 As noted [here](https://stackoverflow.com/a/10694815/836748):
 ```rpm-spec
-%global your_var %(shell your commands)
+%global your_var %(your commands)
 ```

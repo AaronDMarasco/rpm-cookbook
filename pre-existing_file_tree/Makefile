@@ -25,14 +25,14 @@ default: rpm
 .SILENT: clean rpm $(TARBALL) filelist.txt
 
 clean:
-	rm -rf $(RPM_TEMP) $(TARBALL) $(PROJECT)*.rpm filelist.txt
+	rm -vrf $(RPM_TEMP) $(TARBALL) $(PROJECT)*.rpm filelist.txt
 
 rpm: $(TARBALL) filelist.txt
 	mkdir -p $(RPM_TEMP)/SOURCES
 	cp --target-directory=$(RPM_TEMP)/SOURCES/ $^
 	rpmbuild -ba \
 		--define="_topdir $(RPM_TEMP)" \
-		--define "outdir $(OUTPUT)" \
+		--define "outdir $(OUTPUT)"    \
 		--define "project_ $(PROJECT)" \
 		--define "version_ $(VERSION)" \
 		--define "release_ $(RELEASE)" \

@@ -41,17 +41,17 @@ $(info PROJECT:$(project): VERSION:$(version): RELEASE:$(release) GIT_HASH:$(git
 
 default: rpm
 .PHONY: clean rpm
-# .SILENT: clean rpm
+.SILENT: clean rpm
 
 clean:
-	rm -rf $(RPM_TEMP) $(project)*.rpm
+	rm -vrf $(RPM_TEMP) $(project)*.rpm
 
 rpm:
 	rpmbuild -ba \
 	  --define="_topdir   $(RPM_TEMP)" \
-	  --define="project_  $(project)"\
-	  --define="version_  $(version)" \
-	  --define="release_  $(release)"\
+	  --define="project_  $(project)"  \
+	  --define="version_  $(version)"  \
+	  --define="release_  $(release)"  \
 	  --define="hash_     $(git_hash)" \
 	  project.spec
 	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
