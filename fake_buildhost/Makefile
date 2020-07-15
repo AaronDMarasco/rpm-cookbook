@@ -1,5 +1,7 @@
 # This spoofs the build host for both 32- and 64-bit applications
 
+default: testrpm
+
 # To use:
 # 1. Add libmyhostname as a target that calls rpmbuild
 # 2. Add "myhostnameclean" as a target to your "clean"
@@ -49,15 +51,50 @@ libmyhostname_$(MYHOSTNAME_MNAME).c:
 	echo "$$libmyhostname_body" > $@
 
 define libmyhostname_body
-#include <string.h>
 #include <asm/errno.h>
+#include <netdb.h>
+#include <string.h>
 
 int gethostname(char *name, size_t len) {
 	const char *myhostname = "buildhost_$(MYHOSTNAME_MNAME).myprojectname.proj";
 	if (len < strlen(myhostname))
-		return(EINVAL);
+		return EINVAL;
 	strcpy(name, myhostname);
-	return(0);
+	return 0;
 }
+
+struct hostent *gethostbyname(const char *name) {
+	return NULL;  /* Let it fail */
+}
+
 endef
 export libmyhostname_body
+
+## End of Recipe. Example Usage Code:
+.PHONY: clean testrpm
+.SILENT: clean testrpm
+
+project?=myproject
+version?=1.2
+release?=3
+RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
+
+clean: myhostnameclean
+
+define do_build
+	rpmbuild -ba \
+	  --define="_topdir   $(RPM_TEMP)" \
+	  --define="project_  $(project)"  \
+	  --define="version_  $(version)"  \
+	  --define="release_  $(release)"  \
+	  project.spec
+	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
+endef
+
+testrpm: clean libmyhostname
+	$(do_build)
+	echo "Build hosts: (without spoof)"
+	rpm -qip $(project)-$(version)-$(release).src.rpm $(project)-$(version)-$(release).noarch.rpm | grep "Build Host"
+	$(SPOOF_HOSTNAME) $(do_build)
+	echo "Build hosts: (with spoof)"
+	rpm -qip $(project)-$(version)-$(release).src.rpm $(project)-$(version)-$(release).noarch.rpm | grep "Build Host"

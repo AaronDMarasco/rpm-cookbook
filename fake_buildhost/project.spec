@@ -1,0 +1,1 @@
+../multiple_versions/latest_symlink/project.spec
