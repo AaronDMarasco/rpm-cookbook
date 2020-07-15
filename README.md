@@ -37,7 +37,7 @@ Cookbook of RPM techniques
 ## Overview
 I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I come across. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines). It's also *not* a generic "How To Make RPMs" guide, but more of a "shining a flashlight into a dusty corner to see if I can do *this*."
 
-Each "chapter" is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include). All files are available individually in the git repo &mdash; no need to copy and paste from your browser; clone the source!
+Each chapter is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include). All files are available individually in the git repo &mdash; no need to copy and paste from your browser; clone the source!
 
 Feel free to create a new chapter and submit a PR!
 ----
@@ -130,10 +130,10 @@ I'm a little reluctant to include this, because doing it the "right way" isn't a
 
 **This is not recommended** but sometimes inevitable:
  * The build system is too complicated (seldom)
- * You're packaging something already installed
-   * that you have no control over
-   * was installed by a GUI installer and you want to repackage
-   * you don't have source code for
+ * You're packaging something already installed that...
+   * ... you have no control over
+   * ... was installed by a GUI installer and you want to repackage for local usage
+   * ... you don't have source code for
 
 ### How It Works
 The `Makefile` takes various variables and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
@@ -164,11 +164,10 @@ OUTPUT?=/opt/project
 
 # End of configuration
 $(info PROJECT:$(PROJECT): VERSION:$(VERSION): RELEASE:$(RELEASE))
+
 # Make's realpath won't expand ~
 REAL_INPUT=$(shell realpath -e $(INPUT))
-
 TARBALL?=$(PROJECT).tar
-
 RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 
 ifeq ($(REAL_INPUT),)
@@ -188,7 +187,7 @@ rpm: $(TARBALL) filelist.txt
 	cp --target-directory=$(RPM_TEMP)/SOURCES/ $^
 	rpmbuild -ba \
 		--define="_topdir $(RPM_TEMP)" \
-		--define "outdir $(OUTPUT)"    \
+		--define "outdir  $(OUTPUT)"   \
 		--define "project_ $(PROJECT)" \
 		--define "version_ $(VERSION)" \
 		--define "release_ $(RELEASE)" \
@@ -253,12 +252,12 @@ and
 and
 ### Jenkins Build Number in Release
 #### Overview
-This "chapter" is very much intertwined, so you'll have to rip out the parts you want.
+This chapter handles all of the above requirements and is very much intertwined, so you'll have to rip out the parts you want.
 
 #### Reasoning
- * **Branch or Tag in Release**: When checking what version of your software is installed on a machine, it's nice to instantly be able to tell if it's one of your "release" versions or a development branch that somebody was working with.
- * **Monotonic Release Numbers**: Git hashes aren't easily sorted, so there's no way for `rpm`/`yum`/`dnf` to know that `7289cc5` is actually _newer_ than `7289cc5`.
-  * This allows your CI process to update a repository and `yum upgrade` does the right thing.
+ * **Branch or Tag in Release**: When checking what version of your software is installed on a machine, it's nice to instantly be able to tell if it's one of your "release" versions or a development branch that somebody was working with. If it is a branch, *which*?
+ * **Monotonic Release Numbers**: Git hashes aren't easily sorted, so there's no way for `rpm`/`yum`/`dnf` to know that `1.1-7289cc5` is actually _newer_ than `1.1-dc650cc`. By default, they would be *incorrectly* sorted lexicographically.
+   * This allows your CI process to update a repository and `yum upgrade` does the right thing.
  * **Embedding Source Hash**: There's nothing better than "ground truth" when somebody asks for help and they can tell you _exactly_ what RPMs they're dealing with thanks to  `rpm -qi yourpackage`.
  * **Build Number in Release**: When testing RPMs, it's easier to go back and see what CI job created the RPMs.
 
@@ -272,7 +271,7 @@ A little `git` command-line magic (along with some `perl` and `sed` regex) gets 
  * The branch has "." or other characters in it that are invalid for the RPM release field
  * A "release version" is in a specially named _branch_ (not tag) of the format `v1.0` or `v.1.1.3`
 
-To compute the monotonic number, it counts the number of six-minute time periods that have passed since the last release (which requires a manual "bump" in the `Makefile`).
+To compute the monotonic number, it counts the number of six-minute time periods that have passed since the last release (which requires a manual "bump" in the `Makefile` every version).
 
 External information needed:
 |    Variable    |         Default         |             Use Case             |
@@ -308,9 +307,9 @@ RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 # <release> is a label that defaults to "snapshot" if not overridden
 
 # These are only applied if not a specific versioned release:
-# <tag> is a monotonic sequence number/timestamp within a release cycle (when not a specific release)
+# <tag> is a monotonic sequence number/timestamp within a release cycle
 # <job> is a Jenkins job reference if this process is run under Jenkins
-# <branch> is a git branch reference if not "master" or "undefined"
+# <branch> is a git branch reference if not "master" or cannot be determined
 # <dist> added by RPM building, e.g. el7.x86_64
 
 # This changes every 6 minutes which is enough for updated releases (snapshots).
@@ -363,7 +362,6 @@ Summary: My Project That Likes Git
 # Remove this line if you have executables with debug info in the source tree:
 %global debug_package %{nil}
 
-
 %description
 Not much to say. Nothing in here. But, I know where I came from:
 
@@ -396,7 +394,7 @@ This one is very specific to a workflow in an office I was in, and might not be 
 This recipe allows you to build `compat` packages with the old libraries, similar to the official Fedora-recommended practice. However, the multiple version numbers in the RPM name can be confusing, so we replace the "." in the _original_ version with "p", *e.g.* `1.0.1` => `1p0p1`.
 
 ### How It Works
-The [`Makefile`](multiple_versions/latest_symlink/Makefile) creates an array to generate 3 RPMs: `myproject`, `myproject-compat1p0p1`, and `myproject-compat1p1`. It will build the RPM(s) using the [specfile](multiple_versions/latest_symlink/project.spec).
+The [`Makefile`](multiple_versions/latest_symlink/Makefile) creates an array to generate 3 RPMs: `myproject`, `myproject-compat1p0p1` (1.0.1 compat), and `myproject-compat1p1` (1.1 compat). It will build the RPM(s) using the [specfile](multiple_versions/latest_symlink/project.spec).
 
 **Warning**: The `Makefile` targets `test` and `clean` will use `sudo` to manipulate the demo RPMs to show the various effects of installation order, etc. It is recommended that you review the source before running it to ensure you are comfortable with the commands it is executing as `root` on your machine.
 
@@ -409,32 +407,34 @@ External information accepted:
 | `RPM_TEMP`  | `{CWD}/rpmbuild-tmpdir`                             | Temporary directory to build RPM |
 
 
-The `specfile` is real where the "real" magic is; it will:
+The `specfile` is where the "real" magic is; it will:
  * Determine the "base project name" (`%{base_project}`) by removing anything that comes after a "-"
  * Generate the "latest" symlink name (`%{target_link}`) to be used in various places
  * Decide if this is the "base" RPM or one of the compatible ones
-  * `%if "%{name}" != "%{base_project}"`
+   * `%if "%{name}" != "%{base_project}"`
  * If it determines this is a "compat" RPM, it will:
-  * Generate the version number it is compatible with (`%{compat_version}`)
-  * Automatically tell RPM that this RPM `Obsoletes` the original RPM with the same version numbers
-  * Tells RPM that this RPM also `Provides` a specific _exact_ version of the base RPM
-   * This is needed if you have other RPMs that depend explicitly on certain versions (which is why you're going through this trouble in the first place)
-  * Generate a `%triggerun` stanza that will "take over" the symlink if the base RPM is removed and this one left behind
+   * Generate the version number it is compatible with (`%{compat_version}`)
+   * Automatically tell RPM that this RPM `Obsoletes` the original RPM with the same version numbers
+   * Tells RPM that this RPM also `Provides` a specific _exact_ version of the base RPM
+     * This is needed if you have other RPMs that depend explicitly on certain versions (which is why you're going through this trouble in the first place)
+   * Generate a `%triggerpostun` stanza that will "take over" the symlink if the base RPM is removed and this one left behind
+     * *Note*: If you have multiple compat versions, which one will perform this is nondeterministic!
  * Generate a `%post` section that will:
-  * If it is **the base RPM**, will *always* point the symlink to itself
-  * If it is **the first compat RPM**, will point the symlink to itself
- * Generate a `%postun` section that will, if it's the _last_ RPM installed (so updates will not trigger):
-  * Will remove the symlink *iff* it points to the RPM being removed
-  * If possible alternatives still exist (`/<orgdir>/<project>*`), will warn if the symlink is now missing, and will present a list of candidates
+   * If it is **the base RPM**, will *always* point the symlink to itself
+   * If it is **the first compat RPM**, will point *a new symlink* to itself *iff* one doesn't already exist
+ * Generate a `%postun` section that will, if it's the _last_ RPM uninstalled (so updates will not trigger):
+   * Will remove the symlink *iff* it points to the RPM being removed
+   * If possible alternatives still exist (`/<orgdir>/<project>*`), will warn if the symlink is now missing, and will present a list of candidates
 
-Any "business logic" in `%build`, `%install`, etc. should use the same comparison above to determine which files should be used (along with `%{compat_version}`).
+Any "business logic" in `%build`, `%install`, etc. should use the same comparison above (`%{name}` vs. `%{base_project}`) to determine which files should be used (along with `%{compat_version}`).
 
-What it *doesn't* do / or does "wrong":
- * It does _not_ declare the symlink as a `%ghost` file; this will cause it to _always_ be removed on _any_ removal
-  * Some more manipulations in `%preun` might be able to get around this, *e.g.* saving off a copy and then putting it back if it pointed elsewhere
+What it *doesn't* do (or does "wrong"):
+ * It does _not_ declare the symlink as a `%ghost` file; this will cause it to _always_ be removed on _any_ package removal
+   * Some more manipulations in `%preun` might be able to get around this, *e.g.* saving off a copy and then putting it back if it pointed elsewhere
  * It does not properly add the symlink to the RPM database:
-  * No RPMs can depend on the exact path of the "latest" symlink
-  * The RPM DB cannot be queried for it, *e.g.* `rpm -q --whatprovides /path/to/symlink`
+   * No RPMs can depend on the exact path of the "latest" symlink
+   * The RPM DB cannot be queried for it, *e.g.* `rpm -q --whatprovides /path/to/symlink`
+ * It does not force the "compat" RPMs to `Require` the newest base; that is something you can choose to add
 
 #### Recipe
 This recipe has two parts, a [`Makefile`](multiple_versions/latest_symlink/Makefile) and a [specfile](multiple_versions/latest_symlink/project.spec).
@@ -484,9 +484,8 @@ test: clean rpms
 	rpm -q --whatprovides myproject
 	echo "Compat RPMs do not take over symlink:"
 	tree -a /opt/my_org/
-	echo "Removing all (expect a warning):"
+	echo "Removing all (depending on order, a warning may occur):"
 	sudo rpm -e myproject myproject-compat1p0p1 myproject-compat1p1
-	# tree -a /opt/my_org/
 	echo "Now install compat 1.0.1 only:"
 	sudo rpm -i myproject-compat1p0p1-1.2-1.noarch.rpm
 	echo "Latest should be compat 1.0.1:"
@@ -501,7 +500,7 @@ test: clean rpms
 	echo "Removing compat 1.0.1 only (so no warning about broken link):"
 	sudo rpm -e myproject-compat1p0p1
 	tree -a /opt/my_org/
-	echo "Now removing main package (should be told that 1.1 is a candidate):"
+	echo "Now removing main package (should be told that 1.1 is a candidate; 1.1 should step up):"
 	sudo rpm -e myproject
 	tree -a /opt/my_org/
 	echo "Removing compat 1.1 only (no warnings; removed symlink but no candidates remain):"
@@ -510,7 +509,7 @@ test: clean rpms
 	sudo rpm -i myproject-compat1p1-1.2-1.noarch.rpm
 	echo "Symlink now 1.1:"
 	tree -a /opt/my_org/
-	echo "Now install compat 1.0.1 and immediately deleting (it should leave symlink alone):"
+	echo "Now install compat 1.0.1 and immediately delete (it should leave symlink alone):"
 	sudo rpm -i myproject-compat1p0p1-1.2-1.noarch.rpm
 	sudo rpm -e myproject-compat1p0p1
 	tree -a /opt/my_org/
@@ -541,11 +540,12 @@ Summary: My Project That Likes Symlinks
 
 %if "%{name}" != "%{base_project}"
 BuildRequires: /usr/bin/perl
+# Convert that myproj-compatXpY to X.Y
 %global compat_version %(echo %{name} | perl -ne '/-compat(.*)/ && print $1' | tr p .)
 Obsoletes: %{base_project} = %{compat_version}
 Provides: %{base_project} = %{compat_version}
-# Take over symlink if needed
-%triggerun -- %{base_project}
+# Take over symlink if needed (if main is removed)
+%triggerpostun -- %{base_project}
 [ $2 = 0 ] || exit 0
 if [ ! -e %{target_link} ]; then
   >&2 echo "%{name}: %{target_link} was removed; pointing it at me instead"
@@ -620,18 +620,20 @@ When distributing RPMs, you might not want people to know the build host. It sho
 Newer versions of `rpmbuild` support defining `_buildhost`; I have not tested that capability myself.
 
 ### How It Works
-It sets [`LD_PRELOAD`](view-source:https://man7.org/linux/man-pages/man8/ld.so.8.html) to intercept all 32- or 64-bit calls to [`gethostname()`](https://man7.org/linux/man-pages/man2/gethostname.2.html) and replace them with the text you provide.
+It sets [`LD_PRELOAD`](view-source:https://man7.org/linux/man-pages/man8/ld.so.8.html) to intercept all 32- or 64-bit calls to [`gethostname()`](https://man7.org/linux/man-pages/man2/gethostname.2.html) and [`gethostbyname()`](https://man7.org/linux/man-pages/man3/gethostbyname.3.html) to replace them with the text you provide. Only later versions of `rpmbuild` call `gethostbyname()`.
 
 ### Recipe
-This recipe requires you wrap your `rpmbuild` command with a script or `Makefile`. Using the `Makefile` below, you would have `make` call `$(SPOOF_HOSTNAME) rpmbuild ...`.
+This recipe requires you wrap your `rpmbuild` command with a script or `Makefile`. Using the `Makefile` below, you would have `make` call `$(SPOOF_HOSTNAME) rpmbuild ...`. There is a default recipe `testrpm` that will build some RPMs with and without the hostname spoofing.
 
 Edit the `Makefile` yourself where it says "`.myprojectname.proj`" - you can optionally _not_ have it use the `buildhost_<arch>` prefix as well.
 
-Other usage notes are at the top of the `Makefile`.
+Other usage notes are at the top of the `Makefile` with an example at the bottom.
 
 [`Makefile`](fake_buildhost/Makefile):
 ```Makefile
 # This spoofs the build host for both 32- and 64-bit applications
+
+default: testrpm
 
 # To use:
 # 1. Add libmyhostname as a target that calls rpmbuild
@@ -682,18 +684,53 @@ libmyhostname_$(MYHOSTNAME_MNAME).c:
 	echo "$libmyhostname_body" > $@
 
 define libmyhostname_body
-#include <string.h>
 #include <asm/errno.h>
+#include <netdb.h>
+#include <string.h>
 
 int gethostname(char *name, size_t len) {
 	const char *myhostname = "buildhost_$(MYHOSTNAME_MNAME).myprojectname.proj";
 	if (len < strlen(myhostname))
-		return(EINVAL);
+		return EINVAL;
 	strcpy(name, myhostname);
-	return(0);
+	return 0;
 }
+
+struct hostent *gethostbyname(const char *name) {
+	return NULL;  /* Let it fail */
+}
+
 endef
 export libmyhostname_body
+
+## End of Recipe. Example Usage Code:
+.PHONY: clean testrpm
+.SILENT: clean testrpm
+
+project?=myproject
+version?=1.2
+release?=3
+RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
+
+clean: myhostnameclean
+
+define do_build
+	rpmbuild -ba \
+	  --define="_topdir   $(RPM_TEMP)" \
+	  --define="project_  $(project)"  \
+	  --define="version_  $(version)"  \
+	  --define="release_  $(release)"  \
+	  project.spec
+	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
+endef
+
+testrpm: clean libmyhostname
+	$(do_build)
+	echo "Build hosts: (without spoof)"
+	rpm -qip $(project)-$(version)-$(release).src.rpm $(project)-$(version)-$(release).noarch.rpm | grep "Build Host"
+	$(SPOOF_HOSTNAME) $(do_build)
+	echo "Build hosts: (with spoof)"
+	rpm -qip $(project)-$(version)-$(release).src.rpm $(project)-$(version)-$(release).noarch.rpm | grep "Build Host"
 
 ```
 
