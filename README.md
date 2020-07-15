@@ -8,6 +8,8 @@ Table of Contents
     * [Extract a Single File](#extract-a-single-file)
     * [Change (or No) Compression](#change-(or-no)-compression)
     * [Set Output of a Shell Command Into Variable](#set-output-of-a-shell-command-into-variable)
+    * [Request User Input on Install](#request-user-input-on-install)
+    * [Provide Output to User on Install](#provide-output-to-user-on-install)
     * [Warn User if Wrong Distribution](#warn-user-if-wrong-distribution)
   * [How to...](#how-to)
     * [Define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
@@ -35,19 +37,19 @@ Cookbook of RPM techniques
 ## Overview
 I (Aaron D. Marasco) have been creating RPM packages since the CentOS 4 timeframe([1], [2], [3]). I decided to collate some of the things I've done before that I keep referencing in new projects, as well as answering some of the most common questions I come across. This should be considered a *complement* and *not a replacement* for the [*Fedora Packaging Guidelines*](https://fedoraproject.org/wiki/Category:Packaging_guidelines). It's also *not* a generic "How To Make RPMs" guide, but more of a "shining a flashlight into a dusty corner to see if I can do *this*."
 
-Each "chapter" is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include), so they are available individually in the git repo. No need to copy and paste from your browser; clone the source!
+Each "chapter" is a separate directory, so any source code files are transcluded by [Travis-CI](https://travis-ci.com/github/AaronDMarasco/rpm-cookbook) using [`markdown-include`](https://www.npmjs.com/package/markdown-include). All files are available individually in the git repo &mdash; no need to copy and paste from your browser; clone the source!
 
 Feel free to create a new chapter and submit a PR!
 ----
 
 ## Quick Tips
-In reviewing some of the most highly voted answers on Stack Overflow, I decided to collate a few:
+In reviewing some of the most highly voted answers on Stack Overflow, I decided to gather a few here that don't require a full example to explain:
 
 ### Don't Put Single % In Comments
-This happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%` or a multi-line macro will only have the first line commented out!
+This happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%`, or a multi-line macro will only have the first line commented out!
 
 ### Extract All Files
-Use `rpm2cpio` with `cpio`:
+Use `rpm2cpio` with `cpio`. This will extract all files treating the current directory as `/`:
 ```bash
 $ rpm2cpio package-version.rpm | cpio -div
 ```
@@ -76,10 +78,16 @@ As noted [here](https://stackoverflow.com/a/10694815/836748):
 %global your_var %(your commands)
 ```
 
+### Request User Input on Install
+**Don't**. This breaks *many* things, for example automated configuration (KickStart or puppet).
+
+### Provide Output to User on Install
+`rpm` will show all commands if told to be "extra verbose" with `-vv`. However, all output to `stderr` is shown to the user. Specific syntax can be found in many recipes, including an extreme example [below](#warn-user-if-wrong-distribution).
+
 ### Warn User if Wrong Distribution
-On a previous project, we had people install the CentOS 7 RPMs on a CentOS 6 box. Normally, this would fail because things like your C libraries won't match. But it was a `noarch` package... This was helpful; figured I would include it here; it is *very* CentOS-specific:
-```rpm-spec
-# Check if somebody is installing on the wrong platform (AV-721)
+On a previous project, we had people install the CentOS 7 RPMs on a CentOS 6 box. Normally, this would fail because things like your C libraries won't match. But it was a `noarch` package... This was helpful; figured I would include it here. Unfortunately, it is *very* CentOS-specific:
+```bash
+# Check if somebody is installing on the wrong platform
 if [ -n "%{dist}" ]; then
   PKG_VER=`echo %{dist} | perl -ne '/el(\d)/ && print $1'`
   THIS_VER=`perl -ne '/release (\d)/ && print $1' /etc/redhat-release`
@@ -98,19 +106,16 @@ fi
 
 ## How to...
 ### Define Version, Release, etc. in another file, environment variable, etc.
-This is shown in:
- * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
- * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
+
+This is shown in most chapters, including [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree).
 
 ### Call `rpmbuild` from a `Makefile`
-This is shown in:
- * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
- * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
+
+This is shown in most chapters, including [Git Branch or Tag in Release](#git-branch-or-tag-in-release).
 
 ### Disable debug packaging
-While **not recommended**, because debug packages are very useful, this is shown in:
- * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
- * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
+
+While **not recommended**, because debug packages are very useful, this is shown in most chapters as well.
 
 ### Include Jenkins (or Any CI) Job Number in Release
 
