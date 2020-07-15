@@ -3,19 +3,19 @@ Table of Contents
 * [rpm-cookbook](#rpm-cookbook)
   * [Overview](#overview)
   * [Quick Tips](#quick-tips)
-    * [Don't Put Single % In Comments](#don't-put-single-%-in-comments)
+    * [RPM Preprocessor is Really Dumb](#rpm-preprocessor-is-really-dumb)
     * [Extract All Files](#extract-all-files)
     * [Extract a Single File](#extract-a-single-file)
-    * [Change (or No) Compression](#change-(or-no)-compression)
+    * [Change Compression or No Compression](#change-compression-or-no-compression)
     * [Set Output of a Shell Command Into Variable](#set-output-of-a-shell-command-into-variable)
     * [Request User Input on Install](#request-user-input-on-install)
     * [Provide Output to User on Install](#provide-output-to-user-on-install)
     * [Warn User if Wrong Distribution](#warn-user-if-wrong-distribution)
   * [How to...](#how-to)
-    * [Define Version, Release, etc. in another file, environment variable, etc.](#define-version,-release,-etc--in-another-file,-environment-variable,-etc)
-    * [Call `rpmbuild` from a `Makefile`](#call--rpmbuild--from-a--makefile)
+    * [Define key parameters elsewhere](#define-key-parameters-elsewhere)
+    * [Call rpmbuild from a Makefile](#call-rpmbuild-from-a-makefile)
     * [Disable debug packaging](#disable-debug-packaging)
-    * [Include Jenkins (or Any CI) Job Number in Release](#include-jenkins-(or-any-ci)-job-number-in-release)
+    * [Include Jenkins Job Number in Release](#include-jenkins-job-number-in-release)
     * [Provide Older Versions of Libraries](#provide-older-versions-of-libraries)
   * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
   * [Git Problems and Tricks](#git-problems-and-tricks)
@@ -45,8 +45,8 @@ Feel free to create a new chapter and submit a PR!
 ## Quick Tips
 In reviewing some of the most highly voted answers on Stack Overflow, I decided to gather a few here that don't require a full example to explain:
 
-### Don't Put Single % In Comments
-This happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%`, or a multi-line macro will only have the first line commented out!
+### RPM Preprocessor is Really Dumb
+**Don't** put single `%` in comments... this happens [a](https://stackoverflow.com/a/14063974/836748) [*lot*](https://stackoverflow.com/a/18440679/836748). You need to double it with `%%`, or a multi-line macro will only have the first line commented out! Newer versions of `rpmbuild` will _at least_ warn you now.
 
 ### Extract All Files
 Use `rpm2cpio` with `cpio`. This will extract all files treating the current directory as `/`:
@@ -62,7 +62,7 @@ $ rpm2cpio package-3.8.3.rpm | cpio -iv --to-stdout ./usr/share/doc/package-3.8.
 2173 blocks
 ```
 
-### Change (or No) Compression
+### Change Compression or No Compression
 As noted [here](https://stackoverflow.com/a/10255406/836748):
 ```rpm-spec
 %define _source_payload w0.gzdio
@@ -105,16 +105,16 @@ fi
 ----
 
 ## How to...
-### Define Version, Release, etc. in another file, environment variable, etc.
-This is shown in most chapters, including [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree).
+### Define key parameters elsewhere
+The techniques to define Version, Release, etc. in another file, environment variable, etc. are shown in most chapters, including [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree). As an alternative to using the `rpmbuild` command line's `--define` option, you can also pre-process the specfile using `sed`, `autotools`, etc. I've seen them all and done them all for various reasons.
 
-### Call `rpmbuild` from a `Makefile`
+### Call rpmbuild from a Makefile
 This is shown in most chapters, including [Git Branch or Tag in Release](#git-branch-or-tag-in-release).
 
 ### Disable debug packaging
 While **not recommended**, because debug packages are very useful, this is shown in most chapters as well.
 
-### Include Jenkins (or Any CI) Job Number in Release
+### Include Jenkins Job Number in Release
 This is shown in the `git` chapter as [Jenkins Build Number in Release](#jenkins-build-number-in-release)
 
 ### Provide Older Versions of Libraries
