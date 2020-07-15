@@ -7,6 +7,7 @@ INPUT?=/opt/project
 OUTPUT?=/opt/project
 
 # End of configuration
+$(info PROJECT:$(PROJECT): VERSION:$(VERSION): RELEASE:$(RELEASE))
 # Make's realpath won't expand ~
 REAL_INPUT=$(shell realpath -e $(INPUT))
 

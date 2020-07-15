@@ -11,19 +11,6 @@ I'm a little reluctant to include this, because doing it the "right way" isn't a
    * was installed by a GUI installer and you want to repackage
    * you don't have source code for
 
-### Recipe
-This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an example [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
-
-[`Makefile`](pre-existing_file_tree/Makefile):
-```Makefile
-#include "../pre-existing_file_tree/Makefile.md"
-```
-
-[specfile](pre-existing_file_tree/project.spec):
-```rpm-spec
-#include "../pre-existing_file_tree/project-spec.md"
-```
-
 ### How It Works
 The `Makefile` takes various variables and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
 
@@ -37,3 +24,16 @@ The `Makefile` takes various variables and generates a temporary tarball as well
 | `TARBALL`  | `{PROJECT}.tar`         | Temporary tarball used to build  |
 | `RPM_TEMP` | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM |
 #comment https://www.tablesgenerator.com/markdown_tables
+
+### Recipe
+This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an example [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
+
+[`Makefile`](pre-existing_file_tree/Makefile):
+```Makefile
+#include "../pre-existing_file_tree/Makefile.md"
+```
+
+[specfile](pre-existing_file_tree/project.spec):
+```rpm-spec
+#include "../pre-existing_file_tree/project-spec.md"
+```

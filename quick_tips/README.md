@@ -28,7 +28,7 @@ These will send `-0` to `gzip` to effectively not compress. The `0` can be 0-9 t
  * `bz` for bzip2
  * `xz` for XZ/LZMA (on some versions of RPM)
 
-### Set Output of a Random Shell Command Into Variable !heading
+### Set Output of a Shell Command Into Variable !heading
 As noted [here](https://stackoverflow.com/a/10694815/836748):
 ```rpm-spec
 %global your_var %(shell your commands)
