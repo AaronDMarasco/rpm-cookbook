@@ -6,14 +6,14 @@ release?=snapshot$(tag)$(git_tag)
 
 RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 
-##### Set variables that affect the naming of the release packages
+##### Set variables that affect the naming of the packages
 # The general package naming scheme is:
 # <project>-<version>[-<release>][_<tag>][_J<job>][_<branch>][<dist>]
 # where:
 # <project> is our base project name
 # <version> is a normal versioning scheme 1.2.3
-# <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
-#          Omitted for an actual official release
+# <release> is a label that defaults to "snapshot" if not overridden
+
 # These are only applied if not a specific versioned release:
 # <tag> is a monotonic sequence number/timestamp within a release cycle (when not a specific release)
 # <job> is a Jenkins job reference if this process is run under Jenkins
@@ -23,7 +23,6 @@ RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle.
 timestamp := $(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4429931))
-##### Set variables based on what git can tell us
 # Get the git branch and clean it up from various prefixes and suffixes tacked on
 git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
                               perl -pe 's/~[^\d]*$$//' | perl -pe 's/^.*?--//'))

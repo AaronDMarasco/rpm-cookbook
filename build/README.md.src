@@ -19,24 +19,23 @@ Feel free to create a new chapter and submit a PR!
 ### ... define Version, Release, etc. in another file, environment variable, etc. !heading
 This is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+ * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
 ### ... call `rpmbuild` from a `Makefile` !heading
 This is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
+ * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
 ### ... disable debug packaging !heading
 While **not recommended**, because debug packages are very useful, this is shown in:
  * [Importing a Pre-Existing File Tree](#importing-a-pre-existing-file-tree)
-### ... put the `git` hash of your source in the RPM description field !heading
-This is shown in:
  * [Git Branch or Tag in Release](#git-branch-or-tag-in-release)
+### ... include Jenkins Job Number in Release !heading
+This is shown in the `git` chapter as [Jenkins (or Any CI) Build Number in Release](#jenkins-(or-any-ci)-build-number-in-release)
 ----
 
 #include "../pre-existing_file_tree/README.md"
 ----
 
 #include "../git/README.md"
-----
-
-#include "../jenkins/jobnumber/README.md"
 ----
 
 #include "../multiple_versions/latest_symlink/README.md"
