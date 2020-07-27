@@ -1,6 +1,6 @@
 Name: %{project_}
 Version: %{version_}
-Release: %{release_}
+Release: %{release_}%{?dist}
 License: MIT
 Summary: My Poorly Packaged Project
 Source0: %{name}.tar

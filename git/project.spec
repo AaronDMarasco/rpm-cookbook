@@ -1,6 +1,6 @@
 Name: %{project_}
 Version: %{version_}
-Release: %{release_}
+Release: %{release_}%{?dist}
 BuildArch: noarch
 License: MIT
 Summary: My Project That Likes Git
