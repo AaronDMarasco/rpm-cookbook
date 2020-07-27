@@ -138,19 +138,29 @@ I'm a little reluctant to include this, because doing it the "right way" isn't a
 ### How It Works
 The `Makefile` takes various variables and generates a temporary tarball as well as a file listing that are used by the specfile. It uses that to build the `%files` directive and has an empty `%build` phase.
 
-|  Variable  |         Default         |             Use Case             |
-|:----------:|:-----------------------:|:--------------------------------:|
-| `INPUT`    | `/opt/project`          | Source Tree to Copy              |
-| `OUTPUT`   | `/opt/project`          | Destination on Target Machine    |
-| `PROJECT`  | myproject               | Base Name of the RPM             |
-| `VERSION`  | 0.1                     | Version of the RPM               |
-| `RELEASE`  | 1                       | Release/ Build of the RPM        |
-| `TARBALL`  | `{PROJECT}.tar`         | Temporary tarball used to build  |
-| `RPM_TEMP` | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM |
+| Variable         | Default                 | Use Case                                             |
+|------------------|-------------------------|------------------------------------------------------|
+| `INPUT`          | `/opt/project`          | Source Tree to Copy                                  |
+| `OUTPUT`         | `/opt/project`          | Destination on Target Machine                        |
+| `PROJECT`        | myproject               | Base Name of the RPM                                 |
+| `VERSION`        | 0.1                     | Version of the RPM                                   |
+| `RELEASE`        | 1                       | Release/ Build of the RPM                            |
+| `EXTRA_SOURCES`  | (n/a)                   | Space-separated list of other files to add to source |
+| `OUTPUTSPECFILE` | `project.spec`          | RPM Specfile to use                                  |
+| `TARBALL`        | `{PROJECT}.tar`         | Temporary tarball used to build                      |
+| `RPM_TEMP`       | `{CWD}/rpmbuild-tmpdir` | Temporary directory to build RPM                     |
 
 
 ### Recipe
 This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a [specfile](pre-existing_file_tree/project.spec). There is also an example [`.gitignore`](pre-existing_file_tree/.gitignore) that might be useful as well.
+
+If you have other files you want included, you can use `EXTRA_SOURCES` and then refer to them in your specfile, _e.g._ `Source1: myfile`. They are _not_ in the tarball itself, so they are _not_ automatically added to the file list. If you expect to package them, you can also add them to the `%files` stanza yourself, _e.g._ `%{source1}`. I personally used this feature to create a nice listing of plugins that were pre-baked into the RPM and then included them in the description.
+
+#### Optional Usage 1
+If you don't want to package an entire directory tree, but instead a subset, in the `Makefile` you can comment out `filelist-$(PROJECT).txt` from the `.PHONY` flag as well as its recipe. Then generate `filelist-$(PROJECT).txt` manually (_e.g._ by trimming the automatically created one). Only those files will then be packaged. Don't forget to force-add the file to your version control, because it is normally ephemeral and ignored.
+
+#### Optional Usage 2
+If your particular source tree may contain files that are identical and the user won't need to edit any of them, uncomment the two lines in the specfile referring to `hardlink`. This will cause any duplicate files within the RPM to be [hardlinked](https://en.wikipedia.org/wiki/Hard_link) to save space (_e.g._ older versions of python with identical `.pyc` and `.pyo` files). This utility is not available on all OSs.
 
 [`Makefile`](pre-existing_file_tree/Makefile):
 ```Makefile
@@ -158,6 +168,7 @@ This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a
 PROJECT?=myproject
 VERSION?=0.1
 RELEASE?=1
+OUTPUTSPECFILE?=project.spec
 
 INPUT?=/opt/project
 OUTPUT?=/opt/project
@@ -176,13 +187,13 @@ endif
 
 # Even real files are declared "phony" since dependencies otherwise broken
 default: rpm
-.PHONY: clean rpm $(TARBALL) filelist.txt
-.SILENT: clean rpm $(TARBALL) filelist.txt
+.PHONY: clean rpm $(TARBALL) filelist-$(PROJECT).txt
+.SILENT: clean rpm $(TARBALL) filelist-$(PROJECT).txt
 
 clean:
-	rm -vrf $(RPM_TEMP) $(TARBALL) $(PROJECT)*.rpm filelist.txt
+	rm -vrf $(RPM_TEMP) $(TARBALL) $(PROJECT)*.rpm filelist-$(PROJECT).txt
 
-rpm: $(TARBALL) filelist.txt
+rpm: $(TARBALL) $(EXTRA_SOURCES)
 	mkdir -p $(RPM_TEMP)/SOURCES
 	cp --target-directory=$(RPM_TEMP)/SOURCES/ $^
 	rpmbuild -ba \
@@ -191,15 +202,16 @@ rpm: $(TARBALL) filelist.txt
 		--define "project_ $(PROJECT)" \
 		--define "version_ $(VERSION)" \
 		--define "release_ $(RELEASE)" \
-		project.spec
+		$(OUTPUTSPECFILE)
 	cp -v --target-directory=. $(RPM_TEMP)/SRPMS/*.rpm $(RPM_TEMP)/RPMS/*/*.rpm
 
 # The transform will replace the absolute path with a relative one with a new top-level of "proj-ver", which is what RPM prefers
-$(TARBALL): filelist.txt
+$(TARBALL): filelist-$(PROJECT).txt
 	echo "Building tarball of $(shell cat $< | wc -l) files"
 	tar --files-from=$< --owner=0 --group=0 --absolute-names --transform 's|^$(REAL_INPUT)|$(PROJECT)-$(VERSION)|' -cf $@
+	ls -halF $@
 
-filelist.txt: $(REAL_INPUT)
+filelist-$(PROJECT).txt: $(REAL_INPUT)
 	find $(REAL_INPUT) -type f -not -path '*/\.git/*' > $@
 
 ```
@@ -208,13 +220,14 @@ filelist.txt: $(REAL_INPUT)
 ```rpm-spec
 Name: %{project_}
 Version: %{version_}
-Release: %{release_}
+Release: %{release_}%{?dist}
 License: MIT
 Summary: My Poorly Packaged Project
 Source0: %{name}.tar
 # Remove this line if you have executables with debug info in the source tree:
 %global debug_package %{nil}
 BuildRequires: sed tar
+# BuildRequires: hardlink
 
 %description
 This RPM is effectively a fancy tarball.
@@ -225,14 +238,18 @@ set -o pipefail
 %setup -q
 # Generate the file list with absolute target pathnames)
 tar tf %{SOURCE0} | sed -e 's|^%{name}-%{version}|%{outdir}|' > parsed_filelist.txt
+# Fix spaces in filename in manifest by putting into double quotes
+sed -i -e 's/^.* .*$/"\0"/g' parsed_filelist.txt
 
 %build
 # Empty; rpmlint recommendeds it is present anyway
 
 %install
 %{__mkdir_p} %{buildroot}/%{outdir}/
-%{__cp} --target-directory=%{buildroot}/%{outdir}/ -Rv .
+echo "Hardlinking / copying %(wc -l parsed_filelist.txt | cut -f1 -d' ') files..."
+%{__cp} --target-directory=%{buildroot}/%{outdir}/ -alR . || %{__cp} --target-directory=%{buildroot}/%{outdir}/ -aR .
 %{__rm} %{buildroot}/%{outdir}/parsed_filelist.txt
+# hardlink -cv %{buildroot}/%{outdir}
 
 %clean
 %{__rm} -rf --preserve-root %{buildroot}
@@ -354,7 +371,7 @@ rpm:
 ```rpm-spec
 Name: %{project_}
 Version: %{version_}
-Release: %{release_}
+Release: %{release_}%{?dist}
 BuildArch: noarch
 License: MIT
 Summary: My Project That Likes Git
@@ -524,7 +541,7 @@ test: clean rpms
 ```rpm-spec
 Name: %{project_}
 Version: %{version_}
-Release: %{release_}
+Release: %{release_}%{?dist}
 BuildArch: noarch
 License: MIT
 Summary: My Project That Likes Symlinks
