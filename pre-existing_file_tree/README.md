@@ -32,7 +32,11 @@ This recipe has two parts, a [`Makefile`](pre-existing_file_tree/Makefile) and a
 
 If you have other files you want included, you can use `EXTRA_SOURCES` and then refer to them in your specfile, _e.g._ `Source1: myfile`. They are _not_ in the tarball itself, so they are _not_ automatically added to the file list. If you expect to package them, you can also add them to the `%files` stanza yourself, _e.g._ `%{source1}`. I personally used this feature to create a nice listing of plugins that were pre-baked into the RPM and then included them in the description.
 
-**Optional**: If your particular source tree may contain files that are identical and the user won't need to edit any of them, uncomment the two lines in the specfile referring to `hardlink`. This will cause any duplicate files within the RPM to be [hardlinked](https://en.wikipedia.org/wiki/Hard_link) to save space (_e.g._ older versions of python with identical `.pyc` and `.pyo` files). This utility is not available on all OSs.
+#### Optional Usage 1
+If you don't want to package an entire directory tree, but instead a subset, in the `Makefile` you can comment out `filelist-$(PROJECT).txt` from the `.PHONY` flag as well as its recipe. Then generate `filelist-$(PROJECT).txt` manually (_e.g._ by trimming the automatically created one). Only those files will then be packaged. Don't forget to force-add the file to your version control, because it is normally ephemeral and ignored.
+
+#### Optional Usage 2
+If your particular source tree may contain files that are identical and the user won't need to edit any of them, uncomment the two lines in the specfile referring to `hardlink`. This will cause any duplicate files within the RPM to be [hardlinked](https://en.wikipedia.org/wiki/Hard_link) to save space (_e.g._ older versions of python with identical `.pyc` and `.pyo` files). This utility is not available on all OSs.
 
 [`Makefile`](pre-existing_file_tree/Makefile):
 ```Makefile
