@@ -1,4 +1,4 @@
 *.rpm
 *.tar
-filelist.txt
+filelist-*.txt
 rpmbuild-tmpdir/
