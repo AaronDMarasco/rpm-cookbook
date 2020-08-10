@@ -39,6 +39,9 @@ This is normally done using a `compat` package; an example is shown in [Symlinks
 #include "../git/README.md"
 ----
 
+#include "../filtering_provides_requires/README.md"
+----
+
 ## Having Multiple Versions !heading
 #include "../multiple_versions/latest_symlink/README.md"
 ----
