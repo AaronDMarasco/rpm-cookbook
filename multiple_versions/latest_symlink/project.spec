@@ -35,10 +35,10 @@ Not much to say. Nothing in here.
 But we share the symlink %{target_link} across two or more packages.
 
 %prep
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %build
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %install
 %{__mkdir_p} %{buildroot}/%{outdir}/

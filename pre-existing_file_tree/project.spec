@@ -22,7 +22,7 @@ tar tf %{SOURCE0} | sed -e 's|^%{name}-%{version}|%{outdir}|' > parsed_filelist.
 sed -i -e 's/^.* .*$/"\0"/g' parsed_filelist.txt
 
 %build
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %install
 %{__mkdir_p} %{buildroot}/%{outdir}/
