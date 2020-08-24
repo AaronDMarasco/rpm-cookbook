@@ -243,7 +243,7 @@ tar tf %{SOURCE0} | sed -e 's|^%{name}-%{version}|%{outdir}|' > parsed_filelist.
 sed -i -e 's/^.* .*$/"\0"/g' parsed_filelist.txt
 
 %build
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %install
 %{__mkdir_p} %{buildroot}/%{outdir}/
@@ -386,13 +386,13 @@ Not much to say. Nothing in here. But, I know where I came from:
 %{?hash_:ReleaseID: %{hash_}}
 
 %prep
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %build
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %install
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %clean
 %{__rm} -rf --preserve-root %{buildroot}
@@ -636,10 +636,10 @@ Not much to say. Nothing in here.
 But we share the symlink %{target_link} across two or more packages.
 
 %prep
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %build
-# Empty; rpmlint recommendeds it is present anyway
+# Empty; rpmlint recommends it is present anyway
 
 %install
 %{__mkdir_p} %{buildroot}/%{outdir}/
