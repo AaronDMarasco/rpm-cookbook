@@ -16,7 +16,7 @@ These all filter _filenames_ that are fed into the `/usr/lib/rpm/rpmdeps` execut
 ```rpm-spec
 %global short_version 2.7
 # Don't announce to the rest of the system that they can use our python packages or shared library:
-%filter_provides_in -P /side-packages/.*\.so
+%filter_provides_in -P /site-packages/.*\.so
 %filter_provides_in -P libpython%{short_version}*\.so
 
 # This reduces the number of unimportant files looped over considerably (13K => <600, or 30min+ => 5min)
