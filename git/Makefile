@@ -22,9 +22,9 @@ RPM_TEMP?=$(CURDIR)/rpmbuild-tmpdir
 
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle.
-timestamp := $(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4429931))
+timestamp := $(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4880000))
 # Get the git branch and clean it up from various prefixes and suffixes tacked on
-git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
+git_branch :=$(notdir $(shell git name-rev --name-only --exclude=master HEAD | \
                               perl -pe 's/~[^\d]*$$//' | perl -pe 's/^.*?--//'))
 git_version:=$(shell echo $(git_branch) | perl -ne '/^v[\.\d]+$$/ && print')
 git_hash   :=$(shell h=`(git tag --points-at HEAD | head -n1) 2>/dev/null`;\
